@@ -1,0 +1,21 @@
+# WorkBuddy 工作区数据：含私有页面 ID、沙箱 ID、内部环境记录与个人偏好，禁止提交
+.workbuddy/
+
+# 本地辅助脚本（不上传）
+*.bat
+
+# 导出的备份文件：可能含真实账目数据
+一人公司工作台备份-*.json
+流水明细-*.csv
+*.backup.json
+
+# 编辑器与系统文件
+.DS_Store
+Thumbs.db
+desktop.ini
+*.swp
+.vscode/
+.idea/
+
+# 依赖
+node_modules/

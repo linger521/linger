@@ -1,0 +1,1952 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#3b5bdb">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" href="icon-192.png">
+  <link rel="apple-touch-icon" href="icon-192.png">
+
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>一人公司工作台</title>
+<!-- 本工作台通过 WorkBuddy 资料库能力（library skill）搭建与部署；数据本地持久化 + JSON 备份 -->
+<style>
+:root{
+  --bg:#f4f6f9;
+  --card:#ffffff;
+  --text:#1b1f26;
+  --muted:#6b7280;
+  --line:#e6e9ef;
+  --primary:#3b5bdb;
+  --primary-soft:#edf1fe;
+  --accent:#0d9488;
+  --accent-soft:#e6f6f4;
+  --expense:#e03131;
+  --income:#2f9e44;
+  --warn:#f08c00;
+  --warn-soft:#fff7e6;
+  --danger-soft:#fff0f0;
+  --radius:14px;
+  --shadow:0 1px 2px rgba(16,24,40,.04),0 4px 14px rgba(16,24,40,.05);
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--text);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;
+  font-size:15px;line-height:1.55;
+  padding-bottom:env(safe-area-inset-bottom);
+}
+button,input,select,textarea{font-family:inherit;font-size:16px;color:inherit}
+button{cursor:pointer;border:none;background:none}
+a{color:var(--primary);text-decoration:none}
+h1,h2,h3,h4{margin:0;font-weight:650}
+.svgi{width:18px;height:18px;flex:none;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round;display:block}
+.svgi.sm{width:15px;height:15px}
+
+/* ---------- layout ---------- */
+.app{display:grid;grid-template-columns:264px minmax(0,1fr);gap:18px;max-width:1360px;margin:0 auto;padding:18px}
+.sidebar{min-width:0}
+.main{min-width:0}
+
+.brand{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.brand-mark{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#3b5bdb,#0d9488);display:flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.brand-mark .svgi{width:19px;height:19px;stroke-width:2.1}
+.brand-txt strong{display:block;font-size:15.5px;letter-spacing:.2px}
+.brand-txt span{font-size:12px;color:var(--muted)}
+
+.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-top:14px;overflow:hidden}
+.panel-hd{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:13px 15px;border-bottom:1px solid var(--line)}
+.panel-hd h3{font-size:14px;display:flex;align-items:center;gap:7px}
+.panel-hd h3 .svgi{width:16px;height:16px;color:var(--primary)}
+.panel-bd{padding:12px 15px}
+.panel-bd.tight{padding:8px 10px}
+
+.nav{display:flex;flex-direction:column;gap:2px;padding:8px}
+.nav button{display:flex;align-items:center;gap:10px;width:100%;min-height:44px;padding:0 12px;border-radius:10px;color:var(--muted);font-size:14.5px;text-align:left}
+.nav button:hover{background:#f6f7fa;color:var(--text)}
+.nav button.on{background:var(--primary-soft);color:var(--primary);font-weight:600}
+.nav .dot{margin-left:auto;min-width:20px;height:20px;padding:0 6px;border-radius:10px;background:var(--expense);color:#fff;font-size:11.5px;display:flex;align-items:center;justify-content:center;font-weight:600}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:14px;overflow:hidden}
+.card-hd{display:flex;align-items:center;gap:9px;padding:14px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.card-hd h2{font-size:15.5px;display:flex;align-items:center;gap:8px}
+.card-hd h2 .svgi{width:17px;height:17px;color:var(--primary)}
+.card-hd .sub{font-size:12.5px;color:var(--muted);margin-left:auto}
+.card-bd{padding:14px 16px}
+.card-bd.flush{padding:0}
+
+.topbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.topbar h1{font-size:19px}
+.topbar .spacer{flex:1}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;min-height:38px;padding:0 14px;border-radius:10px;background:#f2f4f8;color:var(--text);font-size:14px;border:1px solid var(--line)}
+.btn:hover{background:#eaedf3}
+.btn.pri{background:var(--primary);color:#fff;border-color:var(--primary)}
+.btn.pri:hover{background:#324ec4}
+.btn.ghost{background:#fff}
+.btn.danger{color:var(--expense)}
+.btn.sm{min-height:34px;padding:0 11px;font-size:13.5px;border-radius:9px}
+.btn.icon{padding:0;width:38px}
+.btn.wide{width:100%}
+.chip{display:inline-flex;align-items:center;gap:5px;height:26px;padding:0 10px;border-radius:13px;background:#f2f4f8;color:var(--muted);font-size:12px}
+
+/* ---------- today ---------- */
+.today-hero{background:linear-gradient(135deg,#3b5bdb,#5b6ee1);color:#fff;border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;box-shadow:0 6px 18px rgba(59,91,219,.18)}
+.today-hero h2{font-size:16px;display:flex;align-items:center;gap:8px;color:#fff}
+.today-hero h2 .svgi{width:18px;height:18px;color:#fff}
+.today-hero .date{font-size:12.5px;opacity:.85;margin-top:2px}
+.stat-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:14px}
+.stat{background:rgba(255,255,255,.14);border-radius:11px;padding:10px 12px}
+.stat b{display:block;font-size:20px;line-height:1.2}
+.stat span{font-size:11.5px;opacity:.85}
+
+.todo{display:flex;align-items:flex-start;gap:11px;padding:11px 12px;border-radius:11px;background:#fafbfc;border:1px solid var(--line);margin-bottom:8px}
+.todo:last-child{margin-bottom:0}
+.todo.over{background:var(--danger-soft);border-color:#ffd6d6}
+.todo .tag{font-size:11px;padding:1px 7px;border-radius:6px;background:#eef1f6;color:var(--muted);flex:none;margin-top:2px}
+.todo.over .tag{background:#ffdcdc;color:var(--expense)}
+.todo .body{flex:1;min-width:0}
+.todo .body strong{font-size:14.5px;font-weight:600;display:block}
+.todo .body small{color:var(--muted);font-size:12.5px}
+.todo .act{flex:none}
+.empty{color:var(--muted);font-size:13.5px;text-align:center;padding:22px 10px}
+.empty .svgi{width:26px;height:26px;margin:0 auto 8px;color:#c8cdd6}
+
+/* ---------- projects ---------- */
+.proj{border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:9px;background:#fff}
+.proj:last-child{margin-bottom:0}
+.proj-top{display:flex;align-items:center;gap:8px}
+.proj-top strong{font-size:14px;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.proj-top .pct{font-size:12px;color:var(--muted);flex:none}
+.bar{height:6px;border-radius:4px;background:#eef1f6;overflow:hidden;margin:8px 0 9px}
+.bar i{display:block;height:100%;border-radius:4px;background:var(--primary);transition:width .25s}
+.ms{display:flex;align-items:center;gap:8px;padding:5px 0;font-size:13.2px;border-top:1px dashed var(--line)}
+.ms:first-of-type{border-top:none}
+.ms .ck{width:19px;height:19px;border-radius:6px;border:1.8px solid #c9d0dc;flex:none;display:flex;align-items:center;justify-content:center;background:#fff}
+.ms .ck.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.ms .ck .svgi{width:12px;height:12px;stroke-width:3;opacity:0}
+.ms .ck.on .svgi{opacity:1}
+.ms.done span{text-decoration:line-through;color:var(--muted)}
+.ms span{flex:1;min-width:0}
+.ms .due{font-size:11.5px;color:var(--muted);flex:none}
+.ms .due.over{color:var(--expense);font-weight:600}
+.ms .del{color:#c2c8d2;padding:0 2px;flex:none}
+.ms .del:hover{color:var(--expense)}
+
+/* ---------- news / hot ---------- */
+.item{border:1px solid var(--line);border-radius:12px;padding:13px 14px;margin-bottom:10px;background:#fff}
+.item:last-child{margin-bottom:0}
+.item h4{font-size:14.6px;line-height:1.45;margin-bottom:5px}
+.item p{margin:0 0 7px;font-size:13.4px;color:#414855}
+.item .meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:11.8px;color:var(--muted);margin-bottom:8px}
+.item .why{background:var(--primary-soft);border-radius:9px;padding:8px 10px;font-size:13px;color:#2a3f9e;display:flex;gap:7px}
+.item .why .svgi{width:15px;height:15px;margin-top:2px;flex:none;color:var(--primary)}
+.item .acts{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.srcnote{font-size:12px;color:var(--muted);background:#f7f8fa;border-radius:9px;padding:9px 11px;margin-bottom:12px;display:flex;gap:7px}
+.srcnote .svgi{width:15px;height:15px;flex:none;margin-top:2px;color:var(--warn)}
+.topic{border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:10px;padding:11px 13px;margin-bottom:9px;background:#fff}
+.topic:last-child{margin-bottom:0}
+.topic .fr{font-size:12.2px;color:var(--muted);margin-bottom:4px}
+.topic strong{font-size:14.2px;display:block;margin-bottom:3px}
+.topic p{margin:0;font-size:13.2px;color:#414855}
+.topic .acts{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+.rank{display:inline-flex;align-items:center;justify-content:center;min-width:21px;height:21px;border-radius:6px;background:#eef1f6;color:var(--muted);font-size:11.5px;font-weight:700}
+.rank.top{background:var(--expense);color:#fff}
+
+/* ---------- water ---------- */
+.water-wrap{display:flex;gap:18px;align-items:center;flex-wrap:wrap}
+.ring{position:relative;width:132px;height:132px;flex:none}
+.ring .txt{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .txt b{font-size:26px;line-height:1}
+.ring .txt span{font-size:11.5px;color:var(--muted);margin-top:2px}
+.water-side{flex:1;min-width:190px}
+.cups{display:flex;gap:6px;flex-wrap:wrap;margin:10px 0 12px}
+.cup{width:30px;height:34px;border-radius:5px 5px 9px 9px;border:1.8px solid #cfd8ea;background:#fff;position:relative;overflow:hidden}
+.cup i{position:absolute;left:0;right:0;bottom:0;height:0;background:#7ea6f5;transition:height .25s}
+.cup.full i{height:100%}
+.water-note{font-size:12.5px;color:var(--muted)}
+.remind{display:none;align-items:center;gap:10px;background:var(--warn-soft);border:1px solid #ffe2ac;color:#8a5a00;border-radius:11px;padding:10px 12px;margin-bottom:12px;font-size:13.6px}
+.remind.on{display:flex}
+.remind .spacer{flex:1}
+.bars{display:flex;align-items:flex-end;gap:8px;height:110px;padding-top:8px}
+.bars .col{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.bars .col .b{width:100%;max-width:34px;background:#7ea6f5;border-radius:6px 6px 0 0;min-height:3px;transition:height .3s}
+.bars .col .b.today{background:var(--primary)}
+.bars .col small{font-size:11px;color:var(--muted);white-space:nowrap}
+.bars .col em{font-size:11px;color:var(--muted);font-style:normal}
+
+/* ---------- money ---------- */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(132px,1fr));gap:10px;margin-bottom:11px}
+.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+.field label{font-size:12.2px;color:var(--muted)}
+.field input,.field select{min-height:44px;padding:0 11px;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:16px;width:100%}
+.field input:focus,.field select:focus{outline:2px solid var(--primary-soft);border-color:var(--primary)}
+.seg{display:flex;gap:6px;background:#f2f4f8;padding:4px;border-radius:11px}
+.seg button{flex:1;min-height:36px;border-radius:8px;font-size:14px;color:var(--muted)}
+.seg button.on{background:#fff;color:var(--text);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.07)}
+.seg button.on.out{color:var(--expense)}
+.seg button.on.in{color:var(--income)}
+.money-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin-bottom:14px}
+.mstat{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#fff}
+.mstat span{font-size:12px;color:var(--muted);display:block}
+.mstat b{font-size:19px;display:block;margin-top:2px}
+.mstat b.exp{color:var(--expense)}
+.mstat b.inc{color:var(--income)}
+.bud{display:flex;align-items:center;justify-content:space-between;font-size:13px;margin-bottom:6px}
+.bud .bar{flex:1;margin:0 12px}
+.bud .bar i{background:var(--accent)}
+.bud .bar i.over{background:var(--expense)}
+.ledger{width:100%;border-collapse:collapse;font-size:13.6px}
+.ledger th{text-align:left;font-size:12px;color:var(--muted);font-weight:600;padding:8px 10px;border-bottom:1px solid var(--line)}
+.ledger td{padding:10px;border-bottom:1px solid #f1f3f7}
+.ledger tr:last-child td{border-bottom:none}
+.ledger .amt{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.ledger .amt.out{color:var(--expense)}
+.ledger .amt.in{color:var(--income)}
+.ledger .del{color:#c2c8d2}
+.ledger .del:hover{color:var(--expense)}
+.pie-wrap{display:flex;gap:16px;align-items:center;flex-wrap:wrap}
+.legend{flex:1;min-width:150px;display:flex;flex-direction:column;gap:6px}
+.legend div{display:flex;align-items:center;gap:7px;font-size:13px}
+.legend i{width:10px;height:10px;border-radius:3px;flex:none}
+.legend span{color:var(--muted);margin-left:auto;font-variant-numeric:tabular-nums}
+.mrow{display:flex;gap:10px;align-items:flex-end;height:130px}
+.mrow .g{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.mrow .pair{display:flex;gap:3px;align-items:flex-end;height:100px;width:100%;justify-content:center}
+.mrow .b{width:12px;border-radius:4px 4px 0 0;min-height:3px}
+.mrow .b.inc{background:#69b578}
+.mrow .b.out{background:#ef7070}
+.mrow small{font-size:11px;color:var(--muted)}
+
+/* ---------- learn（已学习） ---------- */
+.learn-top{display:grid;grid-template-columns:repeat(auto-fit,minmax(118px,1fr));gap:11px;margin-bottom:14px}
+.lstat{border:1px solid var(--line);border-radius:12px;padding:11px 13px;background:#fff}
+.lstat span{font-size:12px;color:var(--muted);display:block}
+.lstat b{font-size:20px;display:block;margin-top:2px;line-height:1.25}
+.lmod{border:1px solid var(--line);border-radius:13px;background:#fff;margin-bottom:12px;overflow:hidden}
+.lmod:last-child{margin-bottom:0}
+.lmod-hd{display:flex;align-items:center;gap:8px;padding:12px 13px;background:#fafbfc;border-bottom:1px solid var(--line)}
+.lmod.collapsed .lmod-hd{border-bottom:none}
+.lmod-hd .nm{flex:1;min-width:0;font-size:14.8px;font-weight:650;cursor:pointer}
+.lmod-hd .nm small{display:block;font-weight:400;font-size:12.2px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.lmod-hd .tools{display:flex;gap:2px;flex:none}
+.icbtn{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#98a0ad;flex:none}
+.icbtn:hover{background:#eef1f6;color:var(--text)}
+.icbtn.dan:hover{background:var(--danger-soft);color:var(--expense)}
+.icbtn .svgi{width:16px;height:16px}
+.lmod-bd{padding:12px 13px}
+.lmod.collapsed .lmod-bd{display:none}
+.blk{border:1px solid var(--line);border-radius:11px;padding:11px 12px;margin-bottom:9px;background:#fff}
+.blk:last-child{margin-bottom:0}
+.blk-hd{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.blk-tag{font-size:11px;padding:1px 7px;border-radius:6px;background:var(--primary-soft);color:var(--primary);flex:none}
+.blk-t{font-size:13.6px;font-weight:600;flex:1;min-width:0;word-break:break-word}
+.blk-tools{display:flex;gap:2px;flex:none}
+.blk p{margin:0;font-size:13.6px;color:#3c4453;white-space:pre-wrap;word-break:break-word;line-height:1.6}
+.blk ul{margin:0;padding-left:19px;font-size:13.6px;color:#3c4453}
+.blk li{margin:3px 0}
+.blk pre{margin:0;background:#1e2430;color:#e6edf3;border-radius:9px;padding:11px 12px;font-size:12.6px;line-height:1.6;overflow-x:auto;
+  font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;white-space:pre-wrap;word-break:break-word}
+.blk img{display:block;max-width:100%;border-radius:9px;border:1px solid var(--line)}
+.blk .quote{background:#f8f9fb;border-left:3px solid var(--accent);border-radius:0 9px 9px 0;padding:9px 11px;font-size:13.4px;color:#3c4453;white-space:pre-wrap}
+.blk .from{font-size:12px;color:var(--muted);margin-top:5px}
+.chk{display:flex;align-items:flex-start;gap:8px;font-size:13.6px;padding:4px 0}
+.chk .ck{width:19px;height:19px;border-radius:6px;border:1.8px solid #c9d0dc;flex:none;display:flex;align-items:center;justify-content:center;background:#fff;margin-top:1px}
+.chk .ck.on{background:var(--accent);border-color:var(--accent);color:#fff}
+.chk .ck .svgi{width:12px;height:12px;stroke-width:3;opacity:0}
+.chk .ck.on .svgi{opacity:1}
+.chk.done em{font-style:normal;text-decoration:line-through;color:var(--muted)}
+.blk a{word-break:break-all}
+.addblk{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.ltype-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(146px,1fr));gap:9px}
+.ltype{border:1px solid var(--line);border-radius:11px;padding:10px 11px;text-align:left;background:#fff;min-height:58px;display:flex;gap:9px;align-items:flex-start}
+.ltype:hover{border-color:var(--primary);background:var(--primary-soft)}
+.ltype .svgi{width:17px;height:17px;color:var(--primary);margin-top:2px;flex:none}
+.ltype b{display:block;font-size:13.8px;font-weight:600}
+.ltype small{display:block;color:var(--muted);font-size:12px;margin-top:1px}
+
+/* ---------- misc ---------- */
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(20px);background:#1b1f26;color:#fff;padding:11px 18px;border-radius:11px;font-size:14px;opacity:0;pointer-events:none;transition:.25s;z-index:60;max-width:88vw;text-align:center}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.mask{position:fixed;inset:0;background:rgba(17,24,39,.45);display:none;align-items:center;justify-content:center;padding:18px;z-index:70}
+.mask.on{display:flex}
+.dlg{background:#fff;border-radius:16px;width:100%;max-width:520px;max-height:86vh;overflow:auto;padding:18px}
+.dlg h3{font-size:16px;margin-bottom:8px}
+.dlg p{font-size:13.6px;color:var(--muted);margin:0 0 12px}
+.dlg textarea{width:100%;min-height:150px;border:1px solid var(--line);border-radius:11px;padding:11px;font-size:14px;line-height:1.6;resize:vertical}
+.dlg .row{display:flex;gap:9px;justify-content:flex-end;margin-top:13px;flex-wrap:wrap}
+.view{display:none}
+.view.on{display:block}
+.backup{display:flex;gap:8px;flex-wrap:wrap}
+.tabbar{display:none}
+
+@media (max-width:860px){
+  .app{grid-template-columns:1fr;gap:12px;padding:12px}
+  .sidebar{order:2}
+  .main{order:1}
+  .nav{display:none}
+  .stat-row{grid-template-columns:repeat(2,1fr)}
+  .money-stats{grid-template-columns:1fr 1fr}
+  .ledger th:nth-child(4),.ledger td:nth-child(4){display:none}
+  .topbar h1{font-size:17px}
+  .tabbar{
+    display:flex;position:fixed;left:0;right:0;bottom:0;background:#fff;border-top:1px solid var(--line);
+    padding:6px 4px calc(6px + env(safe-area-inset-bottom));z-index:50;box-shadow:0 -2px 12px rgba(16,24,40,.06)
+  }
+  .tabbar button{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;min-height:50px;color:var(--muted);font-size:11px;border-radius:10px}
+  .tabbar button .svgi{width:21px;height:21px}
+  .tabbar button.on{color:var(--primary)}
+  .main{padding-bottom:70px}
+  .proj-collapsed .panel-bd{display:none}
+}
+@media (max-width:420px){
+  .money-stats{grid-template-columns:1fr}
+  .water-wrap{gap:12px}
+  .ring{width:112px;height:112px}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">
+        <svg class="svgi" viewBox="0 0 24 24"><path d="M3 21h18M5 21V8l7-5 7 5v13M9 21v-6h6v6"/></svg>
+      </div>
+      <div class="brand-txt">
+        <strong>一人公司工作台</strong>
+        <span id="brandDate">—</span>
+      </div>
+    </div>
+
+    <div class="panel" id="projPanel">
+      <div class="panel-hd">
+        <h3>
+          <svg class="svgi" viewBox="0 0 24 24"><path d="M3 7h18M3 12h18M3 17h11"/></svg>
+          长期工作
+        </h3>
+        <button class="btn sm icon" id="projToggle" title="展开/收起">
+          <svg class="svgi sm" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+        </button>
+      </div>
+      <div class="panel-bd" id="projBody">
+        <div id="projList"></div>
+        <button class="btn sm wide" id="addProjBtn" style="margin-top:10px">
+          <svg class="svgi sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          新增长期工作
+        </button>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><h3>
+        <svg class="svgi" viewBox="0 0 24 24"><path d="M12 3v18M5 8h11a3 3 0 010 6H8"/></svg>
+        导航
+      </h3></div>
+      <nav class="nav" id="navList"></nav>
+    </div>
+
+    <div class="panel">
+      <div class="panel-hd"><h3>
+        <svg class="svgi" viewBox="0 0 24 24"><path d="M21 12a9 9 0 11-6.2-8.6M21 3v6h-6"/></svg>
+        数据备份
+      </h3></div>
+      <div class="panel-bd">
+        <div class="backup">
+          <button class="btn sm" id="exportBtn">导出 JSON</button>
+          <button class="btn sm" id="importBtn">导入恢复</button>
+          <button class="btn sm" id="csvBtn">导出 CSV</button>
+          <button class="btn sm danger" id="clearBtn">清空数据</button>
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:9px" id="storeNote">
+          数据保存在本机浏览器，换设备请先导出备份。
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <div class="topbar">
+      <h1 id="viewTitle">今日总览</h1>
+      <span class="chip" id="syncChip">
+        <svg class="svgi sm" viewBox="0 0 24 24"><path d="M5 12.5l4 4L19 7"/></svg>
+        本地已保存
+      </span>
+      <div class="spacer"></div>
+    </div>
+
+    <!-- ---------- TODAY ---------- -->
+    <section class="view on" id="view-today">
+      <div class="today-hero">
+        <h2><svg class="svgi" viewBox="0 0 24 24"><path d="M12 8v4l3 2M3 12a9 9 0 1018 0 9 9 0 00-18 0z"/></svg>今天要处理</h2>
+        <div class="date" id="todayDate">—</div>
+        <div class="stat-row">
+          <div class="stat"><b id="sOverdue">0</b><span>逾期项</span></div>
+          <div class="stat"><b id="sToday">0</b><span>今日待办</span></div>
+          <div class="stat"><b id="sWater">0</b><span>今日喝水(杯)</span></div>
+          <div class="stat"><b id="sMoney">¥0</b><span>今日支出</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd">
+          <h2><svg class="svgi" viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>待办清单</h2>
+          <span class="sub">逾期项自动顺延到今天</span>
+        </div>
+        <div class="card-bd" id="todoList"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg>本周节奏</h2>
+          <span class="sub" id="weekSub">—</span></div>
+        <div class="card-bd" id="weekBox"></div>
+      </div>
+    </section>
+
+    <!-- ---------- AI ---------- -->
+    <section class="view" id="view-ai">
+      <div class="srcnote">
+        <svg class="svgi" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        <span>以下为 <b id="newsStamp">—</b> 抓取的 AI 资讯快照，已提炼关键信息。内容每日会变，点右上角「更新资讯」粘贴最新内容即可替换。</span>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <h2><svg class="svgi" viewBox="0 0 24 24"><path d="M12 2a4 4 0 014 4v1a4 4 0 01-8 0V6a4 4 0 014-4zM5 20a7 7 0 0114 0M12 11v3"/></svg>AI 资讯 · 关键信息</h2>
+          <span class="sub" id="newsCount">—</span>
+        </div>
+        <div class="card-bd" id="newsList"></div>
+      </div>
+    </section>
+
+    <!-- ---------- HOT ---------- -->
+    <section class="view" id="view-hot">
+      <div class="srcnote">
+        <svg class="svgi" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9L1.8 18a2 2 0 001.7 3h17a2 2 0 001.7-3L13.7 3.9a2 2 0 00-3.4 0z"/></svg>
+        <span>抖音热榜为 <b id="hotStamp">—</b> 快照，每条已配一个适合一人公司的选题角度。点「更新热榜」可替换成最新数据。</span>
+      </div>
+      <div class="card">
+        <div class="card-hd">
+          <h2><svg class="svgi" viewBox="0 0 24 24"><path d="M9 18V6l10-2v12M9 18a3 3 0 11-6 0 3 3 0 016 0zM19 16a3 3 0 11-6 0 3 3 0 016 0z"/></svg>抖音热榜 · 选题建议</h2>
+          <span class="sub" id="hotCount">—</span>
+        </div>
+        <div class="card-bd" id="hotList"></div>
+      </div>
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2zM17 21v-8H7v8M7 3v5h8"/></svg>我的选题库</h2>
+          <span class="sub" id="topicCount">—</span></div>
+        <div class="card-bd" id="topicList"></div>
+      </div>
+    </section>
+
+    <!-- ---------- WATER ---------- -->
+    <section class="view" id="view-water">
+      <div class="card">
+        <div class="card-hd">
+          <h2><svg class="svgi" viewBox="0 0 24 24"><path d="M12 2.7s6 6.1 6 10.3a6 6 0 11-12 0c0-4.2 6-10.3 6-10.3z"/></svg>喝水打卡</h2>
+          <span class="sub" id="waterGoalTxt">目标 8 杯</span>
+        </div>
+        <div class="card-bd">
+          <div class="remind" id="remindBox">
+            <svg class="svgi" viewBox="0 0 24 24"><path d="M18 8a6 6 0 10-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.7 21a2 2 0 01-3.4 0"/></svg>
+            <span id="remindTxt">该喝水了</span>
+            <div class="spacer"></div>
+            <button class="btn sm pri" id="remindDone">喝了</button>
+            <button class="btn sm" id="remindSnooze">稍后</button>
+          </div>
+          <div class="water-wrap">
+            <div class="ring">
+              <svg viewBox="0 0 120 120" width="100%" height="100%">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="#eef1f6" stroke-width="12"></circle>
+                <circle id="ringArc" cx="60" cy="60" r="52" fill="none" stroke="#3b5bdb" stroke-width="12"
+                        stroke-linecap="round" stroke-dasharray="326.7" stroke-dashoffset="326.7"
+                        transform="rotate(-90 60 60)"></circle>
+              </svg>
+              <div class="txt"><b id="cupNow">0</b><span id="cupGoal">/ 8 杯</span></div>
+            </div>
+            <div class="water-side">
+              <div class="cups" id="cupGrid"></div>
+              <div class="backup">
+                <button class="btn pri" id="addCupBtn">
+                  <svg class="svgi sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>喝了一杯
+                </button>
+                <button class="btn" id="undoCupBtn">撤销</button>
+              </div>
+              <div class="water-note" id="waterNote" style="margin-top:10px">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M3 3v18h18M7 16v-5M12 16V8M17 16v-7"/></svg>近 7 天</h2>
+          <span class="sub" id="weekAvg">—</span></div>
+        <div class="card-bd"><div class="bars" id="waterBars"></div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M12 6v6l4 2M3 12a9 9 0 1018 0 9 9 0 00-18 0z"/></svg>喝水提醒设置</h2></div>
+        <div class="card-bd">
+          <div class="form-grid">
+            <div class="field"><label>每日目标（杯）</label><input type="number" id="setGoal" min="1" max="20" value="8"></div>
+            <div class="field"><label>提醒间隔（分钟）</label><input type="number" id="setGap" min="15" max="240" step="5" value="45"></div>
+          </div>
+          <button class="btn pri" id="saveWaterSet">保存设置</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- MONEY ---------- -->
+    <section class="view" id="view-money">
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>记一笔</h2>
+          <span class="sub">支出红 · 收入绿</span></div>
+        <div class="card-bd">
+          <div class="seg" id="typeSeg" style="margin-bottom:11px">
+            <button class="on out" data-type="out">支出</button>
+            <button data-type="in">收入</button>
+          </div>
+          <div class="form-grid">
+            <div class="field"><label>金额（元）</label><input type="number" id="mAmt" inputmode="decimal" placeholder="0.00" step="0.01"></div>
+            <div class="field"><label>分类</label><select id="mCat"></select></div>
+            <div class="field"><label>日期</label><input type="date" id="mDate"></div>
+            <div class="field"><label>备注</label><input type="text" id="mNote" placeholder="选填"></div>
+          </div>
+          <button class="btn pri wide" id="addMoneyBtn">记录</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M3 3v18h18M7 15l4-5 3 3 5-7"/></svg>本月概览</h2>
+          <span class="sub" id="monthLabel">—</span></div>
+        <div class="card-bd">
+          <div class="money-stats">
+            <div class="mstat"><span>本月收入</span><b class="inc" id="mIn">¥0</b></div>
+            <div class="mstat"><span>本月支出</span><b class="exp" id="mOut">¥0</b></div>
+            <div class="mstat"><span>结余</span><b id="mNet">¥0</b></div>
+          </div>
+          <div class="bud">
+            <span>月预算</span>
+            <div class="bar"><i id="budBar" style="width:0%"></i></div>
+            <span id="budTxt">¥0 / ¥0</span>
+          </div>
+          <div class="form-grid" style="margin-top:12px;max-width:280px">
+            <div class="field"><label>设置本月预算（元）</label><input type="number" id="budInput" min="0" step="100" placeholder="6000"></div>
+          </div>
+          <button class="btn sm" id="saveBud" style="margin-top:9px">保存预算</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M12 3a9 9 0 109 9h-9V3z"/><path d="M15 3.6A9 9 0 0120.4 9H15V3.6z"/></svg>本月支出结构</h2></div>
+        <div class="card-bd"><div class="pie-wrap">
+          <svg id="pieSvg" width="150" height="150" viewBox="0 0 150 150" style="flex:none"></svg>
+          <div class="legend" id="pieLegend"></div>
+        </div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M3 3v18h18M7 20V10M12 20V5M17 20v-8"/></svg>近 6 个月对比</h2></div>
+        <div class="card-bd"><div class="mrow" id="monthBars"></div>
+          <div style="display:flex;gap:14px;justify-content:center;margin-top:10px;font-size:12px;color:var(--muted)">
+            <span><i style="display:inline-block;width:9px;height:9px;background:#69b578;border-radius:2px"></i> 收入</span>
+            <span><i style="display:inline-block;width:9px;height:9px;background:#ef7070;border-radius:2px"></i> 支出</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-hd"><h2><svg class="svgi" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>流水明细</h2>
+          <span class="sub" id="ledgerCount">—</span></div>
+        <div class="card-bd flush" style="overflow-x:auto">
+          <table class="ledger">
+            <thead><tr><th>日期</th><th>分类</th><th>备注</th><th>类型</th><th style="text-align:right">金额</th><th></th></tr></thead>
+            <tbody id="ledgerBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- LEARN（已学习） ---------- -->
+    <section class="view" id="view-learn">
+      <div class="learn-top" id="learnStats"></div>
+      <div class="card">
+        <div class="card-hd">
+          <h2><svg class="svgi" viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>已学习模块</h2>
+          <span class="sub" id="learnCount">—</span>
+        </div>
+        <div class="card-bd">
+          <div id="learnList"></div>
+          <button class="btn pri wide" id="addLearnBtn" style="margin-top:12px">
+            <svg class="svgi sm" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>新增学习模块
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<nav class="tabbar" id="tabbar"></nav>
+<div class="toast" id="toast"></div>
+
+<div class="mask" id="mask">
+  <div class="dlg">
+    <h3 id="dlgTitle">标题</h3>
+    <p id="dlgDesc">说明</p>
+    <div id="dlgBody"></div>
+    <div class="row">
+      <button class="btn" id="dlgCancel">取消</button>
+      <button class="btn pri" id="dlgOk">确定</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+'use strict';
+
+/* ================= 常量与存储 ================= */
+var K = {
+  projects:'wb_solo_projects', water:'wb_solo_water', ledger:'wb_solo_ledger',
+  budget:'wb_solo_budget', topics:'wb_solo_topics', settings:'wb_solo_settings',
+  news:'wb_solo_news', hot:'wb_solo_hot', seeded:'wb_solo_seeded',
+  learn:'wb_solo_learn', seeded2:'wb_solo_seeded2'
+};
+/* 已学习：每个模块内部可叠加多种内容块 */
+var LTYPES = [
+  {t:'text',  n:'文本笔记', d:'一段话写清学到了什么', ic:'book'},
+  {t:'list',  n:'要点清单', d:'多条要点，可逐条打勾', ic:'list'},
+  {t:'link',  n:'链接收藏', d:'原文 / 教程 / 课程地址', ic:'link'},
+  {t:'code',  n:'代码·提示词', d:'可复用的代码与 prompt', ic:'code'},
+  {t:'quote', n:'金句摘录', d:'摘抄原文并标注出处', ic:'quote'},
+  {t:'image', n:'图片', d:'截图、手写笔记照片', ic:'image'}
+];
+function ltypeName(t){
+  for(var i=0;i<LTYPES.length;i++){ if(LTYPES[i].t===t) return LTYPES[i].n; }
+  return '内容';
+}
+var CAT_OUT = ['工具订阅','外包协作','设备采购','内容推广','差旅交通','餐饮','房租水电','其他'];
+var CAT_IN  = ['接单交付','咨询服务','课程售卖','广告分成','平台补贴','其他'];
+var PIE_COLORS = ['#3b5bdb','#0d9488','#f08c00','#e03131','#7048e8','#1098ad','#c2255c','#868e96'];
+
+function load(key, def){
+  try{ var v = localStorage.getItem(key); if(v===null||v==='') return def; return JSON.parse(v); }
+  catch(e){ return def; }
+}
+function save(key, val){
+  try{ localStorage.setItem(key, JSON.stringify(val)); return true; }
+  catch(e){ toast('保存失败：浏览器存储空间不足'); return false; }
+}
+function uid(){ return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+/* ================= 日期工具 ================= */
+function pad(n){ return n<10 ? '0'+n : ''+n; }
+function dstr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function today(){ return dstr(new Date()); }
+function shiftDay(n){ var d=new Date(); d.setDate(d.getDate()+n); return dstr(d); }
+function monthOf(s){ return String(s).slice(0,7); }
+function curMonth(){ return today().slice(0,7); }
+function cnDate(s){ var p=String(s).split('-'); return p[1]+'月'+p[2]+'日'; }
+function daysBetween(a,b){
+  var x=new Date(a+'T00:00:00'), y=new Date(b+'T00:00:00');
+  return Math.round((y-x)/86400000);
+}
+function weekName(s){
+  var d=new Date(s+'T00:00:00'), w=['周日','周一','周二','周三','周四','周五','周六'];
+  return w[d.getDay()];
+}
+
+/* ================= 状态 ================= */
+var state = {
+  view:'today',
+  moneyType:'out',
+  projects:[], water:{}, ledger:[], budget:{}, topics:[], settings:{}, news:[], hot:[],
+  learn:[]
+};
+
+/* ================= 预置数据 ================= */
+var SEED_NEWS = [
+  {id:'n1', tag:'模型发布', title:'OpenAI 新模型 Astra 达到「Critical」网络安全阈值，改为受限发布',
+   sum:'Astra 在 ExploitBench 拿到满分并自主发现两个零日漏洞，OpenAI 推迟全量上线，最强网安能力先向内测用户和 Daybreak Blue 防御团队开放。',
+   why:'AI 自主能力边界在被重新划线。做 AI 工具/内容的人，接下来半年「AI 安全与可控」会是高关注话题，适合提前备选题。'},
+  {id:'n2', tag:'成本下降', title:'AI token 价格年内腰斩，LLM Token 支出指数降至 97 美分',
+   sum:'中国开源模型竞争、OpenAI 7 月降价与推理成本下降共同推动，价格不到今年夏季高点的一半；中国开源模型公司 ARR 已达 100 亿—150 亿美元区间。',
+   why:'你跑 AI 工作流的单位成本还在降。适合把原本嫌贵的高频调用（批量改写、素材处理）重新算一遍账，能省钱就是纯利润。'},
+  {id:'n3', tag:'模型发布', title:'Anthropic 发布 Claude Fable 5.1 / Mythos 5.1，缓存读取成本降 75%',
+   sum:'两者同底层不同定位，Fable 缓存读取成本直降 75%，长上下文与高频调用场景账单可省 30%—50%。',
+   why:'长文档、知识库类应用首次真正算得过账。如果你有「喂一堆资料再输出」的流程，现在值得重做。'},
+  {id:'n4', tag:'模型发布', title:'谷歌发布 Gemini 3.8 Flash 及网络安全版 Flash Cyber',
+   sum:'六周内第三次上新 Flash，主打长周期软件工程与自主智能体；同步启动 Fairwind 计划，650 多家政府与关键基础设施机构获优先通道。',
+   why:'「智能体替你干完一整件事」正在变成标配能力。一人公司最该抢的是把重复流程 agent 化，而不是继续手动搬砖。'},
+  {id:'n5', tag:'竞争格局', title:'Meta 发布 Muse Spark 1.3，编码能力超 GPT-5.6 Sol，定价维持不变',
+   sum:'官方称编码能力优于 GPT-5.6 Sol、与 Claude Fable 5.1 持平，Token 消耗减少 25%，按 0.10/0.20 美元每百万 token 计费，将接入 Instagram、Facebook。',
+   why:'头部模型价格战打到底，中小开发者的试错成本接近零。选型别再看榜单，直接拿你自己的真实任务跑一遍。'},
+  {id:'n6', tag:'基础设施', title:'谷歌 TPU 迭代提速至「一年两款」，数据中心建设支出创纪录',
+   sum:'自研芯片更新周期从两年一代缩短到一年两款；美国数据中心建筑年化支出突破 750 亿美元，同比增长 57%。',
+   why:'算力供给端还在猛踩油门，意味着未来一年推理价格大概率继续下行。签长期 AI 订阅时别锁死太久。'},
+  {id:'n7', tag:'行业动态', title:'快手旗下可灵获国家 AI 基金等增资，估值约 1228 亿元',
+   sum:'本轮出资约 14 亿元，投后估值直逼母公司快手市值，反映资本市场对国产视频生成赛道的持续看好。',
+   why:'视频生成是离一人公司变现最近的一条路（短视频、广告素材、课程包装）。现在入场工具链已足够便宜。'}
+];
+
+var SEED_HOT = [
+  {rank:1, title:'抖音直播税务新规：10 月 1 日起收入到账即扣税', cat:'政策',
+   topic:'《一人公司必看：10 月起平台收入这样扣税，3 步把账做对》',
+   angle:'用一张流程图讲清「到账即扣税」对自由职业者现金流的影响，配上自己记账台账的截图模板，干货+可复用模板最容易收藏。'},
+  {rank:2, title:'台风「沙德尔」三次登陆福建，多地「三停一休」', cat:'天气',
+   topic:'《居家办公第 3 天，我把一人公司的协作流程跑通了》',
+   angle:'借极端天气切入远程办公：异步沟通、任务看板、客户预期管理，做成「可复制的一天」vlog 式图文。'},
+  {rank:3, title:'现货黄金失守 4300 美元，金饰克价一周跌百元', cat:'财经',
+   topic:'《一人公司要不要拿闲钱买金？先算清这 3 笔账》',
+   angle:'不讲宏观，只讲现金流：应急金、税负、流动性。用你自己的记账数据举例，真实感是最大壁垒。'},
+  {rank:4, title:'华为、小米、荣耀多款手机正式涨价', cat:'数码',
+   topic:'《涨价潮下，一人公司的设备该不该现在换？》',
+   angle:'给出「设备折旧 vs 产出效率」的决策表，把自己的采购清单和回本周期算给观众看，实用类长尾流量好。'},
+  {rank:5, title:'央视抽查：保温杯连「304」钢印都能造假', cat:'消费',
+   topic:'《被抽检点名的 3 类日用品，省钱别省在这》',
+   angle:'避坑清单类内容转发率高。做成「看得懂的选购 5 步法」，结尾引导收藏。'},
+  {rank:6, title:'家长在班级群自报干部身份「求关照」，校方回应', cat:'社会',
+   topic:'《一个人做公司，如何体面地拒绝「求关照」》',
+   angle:'从社会新闻切到个人边界管理，讲清报价、折扣、白嫖话术的应对模板，B 端自由职业者共鸣强。'},
+  {rank:7, title:'泰国取消 60 日免签，出境游再添变数', cat:'旅行',
+   topic:'《数字游民签证变政，我的 Plan B 怎么备》',
+   angle:'远程工作+旅行是持续热门赛道，做「政策变动应对清单」，信息差本身就是价值。'},
+  {rank:8, title:'小米 18 Fold「中折叠」官宣 9 月 7 日发布', cat:'数码',
+   topic:'《发布会前先别下单：新机入手决策清单》',
+   angle:'抢在发布会前出「决策框架」，蹭搜索流量；发布后再出实测对比，一条热点吃两次。'}
+];
+
+function seedIfNeeded(){
+  if(load(K.seeded,false)) return;
+  var t = today();
+  save(K.projects, []);   /* 长期工作 / 待办留空，由你自己填 */
+  save(K.water, (function(){
+    var w={}; w[shiftDay(-2)]={cups:6,last:''}; w[shiftDay(-1)]={cups:7,last:''}; w[t]={cups:3,last:''}; return w;
+  })());
+  save(K.ledger, [
+    {id:uid(), date:shiftDay(-1), type:'in',  amount:3800, cat:'接单交付', note:'A 客户首款'},
+    {id:uid(), date:shiftDay(-2), type:'out', amount:168,  cat:'工具订阅', note:'AI 工具月费'},
+    {id:uid(), date:shiftDay(-3), type:'out', amount:1200, cat:'外包协作', note:'视频剪辑外包'},
+    {id:uid(), date:shiftDay(-5), type:'in',  amount:960,  cat:'课程售卖', note:'小课 8 单'},
+    {id:uid(), date:shiftDay(-6), type:'out', amount:268,  cat:'内容推广', note:'信息流投放测试'}
+  ]);
+  save(K.budget, {month:curMonth(), amount:6000});
+  save(K.topics, []);
+  save(K.settings, {goal:8, gap:45, lastDrink:'', snoozeUntil:0});
+  save(K.news, {stamp: today(), items: SEED_NEWS});
+  save(K.hot,  {stamp: today(), items: SEED_HOT});
+  save(K.learn, []);
+  save(K.seeded, true);
+}
+
+/* 一次性迁移：清掉旧版预置的示例长期工作与待办，不碰你自己录入的数据 */
+function clearSeedProjectsOnce(){
+  if(load(K.seeded2,false)) return;
+  var ps = load(K.projects, []);
+  if(Object.prototype.toString.call(ps)!=='[object Array]') ps=[];
+  var kept = ps.filter(function(p){ return ['p1','p2','p3'].indexOf(p.id)===-1; });
+  if(kept.length !== ps.length){ save(K.projects, kept); }
+  save(K.seeded2, true);
+}
+
+function reloadAll(){
+  state.projects = load(K.projects, []);
+  state.water    = load(K.water, {});
+  state.ledger   = load(K.ledger, []);
+  state.budget   = load(K.budget, {month:curMonth(), amount:0});
+  state.topics   = load(K.topics, []);
+  state.settings = load(K.settings, {goal:8, gap:45, lastDrink:'', snoozeUntil:0});
+  state.news     = load(K.news, {stamp:today(), items:[]});
+  state.hot      = load(K.hot,  {stamp:today(), items:[]});
+  var lm = load(K.learn, []);
+  state.learn    = (Object.prototype.toString.call(lm)==='[object Array]') ? lm : [];
+  if(state.budget.month !== curMonth()){ state.budget = {month:curMonth(), amount:state.budget.amount||0}; save(K.budget,state.budget); }
+}
+
+/* ================= 通用 UI ================= */
+var toastTimer=null;
+function toast(msg){
+  var el=document.getElementById('toast'); el.textContent=msg; el.classList.add('on');
+  clearTimeout(toastTimer); toastTimer=setTimeout(function(){ el.classList.remove('on'); },2200);
+}
+var dlgOkHandler=null;
+function openDlg(title, desc, bodyHTML, okText, onOk){
+  document.getElementById('dlgTitle').textContent=title;
+  document.getElementById('dlgDesc').textContent=desc;
+  document.getElementById('dlgBody').innerHTML=bodyHTML||'';
+  document.getElementById('dlgOk').textContent=okText||'确定';
+  dlgOkHandler=onOk||null;
+  document.getElementById('mask').classList.add('on');
+}
+function closeDlg(){ document.getElementById('mask').classList.remove('on'); dlgOkHandler=null; }
+function esc(s){
+  return String(s==null?'':s).replace(/[&<>"']/g, function(c){
+    return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+  });
+}
+function money(n){
+  var v = Math.round((Number(n)||0)*100)/100;
+  return '¥' + v.toLocaleString('zh-CN',{minimumFractionDigits:0, maximumFractionDigits:2});
+}
+function icon(name){
+  var m = {
+    today:'<path d="M12 8v4l3 2M3 12a9 9 0 1018 0 9 9 0 00-18 0z"/>',
+    ai:'<path d="M12 2a4 4 0 014 4v1a4 4 0 01-8 0V6a4 4 0 014-4zM5 20a7 7 0 0114 0M12 11v3"/>',
+    hot:'<path d="M9 18V6l10-2v12M9 18a3 3 0 11-6 0 3 3 0 016 0zM19 16a3 3 0 11-6 0 3 3 0 016 0z"/>',
+    water:'<path d="M12 2.7s6 6.1 6 10.3a6 6 0 11-12 0c0-4.2 6-10.3 6-10.3z"/>',
+    money:'<path d="M12 1v22M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/>',
+    plus:'<path d="M12 5v14M5 12h14"/>',
+    check:'<path d="M5 12.5l4 4L19 7"/>',
+    trash:'<path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6"/>',
+    edit:'<path d="M12 20h9M16.5 3.5a2.1 2.1 0 013 3L7 19l-4 1 1-4z"/>',
+    inbox:'<path d="M22 12h-6l-2 3h-4l-2-3H2M5 5h14l3 7v6a2 2 0 01-2 2H4a2 2 0 01-2-2v-6z"/>',
+    book:'<path d="M4 19.5A2.5 2.5 0 016.5 17H20M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/>',
+    list:'<path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>',
+    link:'<path d="M10 13a5 5 0 007.5.5l3-3A5 5 0 0013.5 3.5L12 5M14 11a5 5 0 00-7.5-.5l-3 3A5 5 0 0010.5 20.5L12 19"/>',
+    code:'<path d="M16 18l6-6-6-6M8 6l-6 6 6 6"/>',
+    quote:'<path d="M6 17h3l2-4V7H5v6h3zM15 17h3l2-4V7h-6v6h3z"/>',
+    image:'<path d="M3 5h18v14H3zM3 15l5-5 4 4 3-3 6 6M8.5 9.5a1 1 0 100-2 1 1 0 000 2z"/>',
+    up:'<path d="M12 19V5M6 11l6-6 6 6"/>',
+    down:'<path d="M12 5v14M6 13l6 6 6-6"/>',
+    fold:'<path d="M6 9l6 6 6-6"/>'
+  };
+  return '<svg class="svgi" viewBox="0 0 24 24">'+(m[name]||'')+'</svg>';
+}
+
+/* ================= 计算层 ================= */
+function allMilestones(){
+  var out=[];
+  for(var i=0;i<state.projects.length;i++){
+    var p=state.projects[i];
+    for(var j=0;j<(p.milestones||[]).length;j++){
+      out.push({proj:p, ms:p.milestones[j]});
+    }
+  }
+  return out;
+}
+function pendingMilestones(){
+  return allMilestones().filter(function(x){ return !x.ms.done; });
+}
+function overdueList(){
+  var t=today();
+  return pendingMilestones().filter(function(x){ return daysBetween(x.ms.due, t) > 0; });
+}
+function todayList(){
+  var t=today();
+  return pendingMilestones().filter(function(x){ return daysBetween(x.ms.due, t) === 0; });
+}
+function projProgress(p){
+  var ms=p.milestones||[];
+  if(!ms.length) return 0;
+  var d=0; for(var i=0;i<ms.length;i++){ if(ms[i].done) d++; }
+  return Math.round(d/ms.length*100);
+}
+function cupsOn(date){ var w=state.water[date]; return w? (Number(w.cups)||0) : 0; }
+function monthRecords(m){ return state.ledger.filter(function(r){ return monthOf(r.date)===m; }); }
+function sumBy(arr, type){
+  var s=0; for(var i=0;i<arr.length;i++){ if(arr[i].type===type) s += Number(arr[i].amount)||0; }
+  return s;
+}
+function last6Months(){
+  var arr=[], d=new Date();
+  for(var i=5;i>=0;i--){
+    var x=new Date(d.getFullYear(), d.getMonth()-i, 1);
+    arr.push(x.getFullYear()+'-'+pad(x.getMonth()+1));
+  }
+  return arr;
+}
+function catBreakdown(m){
+  var map={};
+  var recs=monthRecords(m).filter(function(r){ return r.type==='out'; });
+  for(var i=0;i<recs.length;i++){
+    var c=recs[i].cat||'其他';
+    map[c]=(map[c]||0)+(Number(recs[i].amount)||0);
+  }
+  var out=[];
+  for(var k in map){ if(Object.prototype.hasOwnProperty.call(map,k)) out.push({label:k,value:map[k]}); }
+  out.sort(function(a,b){ return b.value-a.value; });
+  return out;
+}
+
+/* ================= 渲染层（互不调用，只由 refreshAll 调度） ================= */
+function renderBrand(){
+  var d=new Date();
+  var w=['周日','周一','周二','周三','周四','周五','周六'][d.getDay()];
+  document.getElementById('brandDate').textContent =
+    d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+w;
+  document.getElementById('todayDate').textContent =
+    d.getFullYear()+'年'+(d.getMonth()+1)+'月'+d.getDate()+'日 '+w+' · 打开就看见今天要做什么';
+}
+
+function renderProjects(){
+  var box=document.getElementById('projList');
+  if(!state.projects.length){
+    box.innerHTML='<div class="empty">'+icon('inbox')+'还没有长期工作，点下面新增</div>';
+    return;
+  }
+  var t=today(), html='';
+  for(var i=0;i<state.projects.length;i++){
+    var p=state.projects[i], pct=projProgress(p);
+    var msHtml='';
+    for(var j=0;j<(p.milestones||[]).length;j++){
+      var m=p.milestones[j];
+      var over = !m.done && daysBetween(m.due,t) > 0;
+      msHtml +=
+        '<div class="ms'+(m.done?' done':'')+'">'+
+          '<button class="ck'+(m.done?' on':'')+'" data-act="toggleMs" data-pid="'+p.id+'" data-mid="'+m.id+'">'+icon('check')+'</button>'+
+          '<span>'+esc(m.title)+'</span>'+
+          '<span class="due'+(over?' over':'')+'">'+(over?'逾期 '+daysBetween(m.due,t)+' 天':(m.done?'已完成':cnDate(m.due)))+'</span>'+
+          '<button class="del" data-act="delMs" data-pid="'+p.id+'" data-mid="'+m.id+'" title="删除">'+icon('trash')+'</button>'+
+        '</div>';
+    }
+    html +=
+      '<div class="proj">'+
+        '<div class="proj-top">'+
+          '<strong title="'+esc(p.goal||'')+'">'+esc(p.name)+'</strong>'+
+          '<span class="pct">'+pct+'%</span>'+
+          '<button class="del" data-act="addMs" data-pid="'+p.id+'" title="加里程碑">'+icon('plus')+'</button>'+
+        '</div>'+
+        '<div class="bar"><i style="width:'+pct+'%"></i></div>'+
+        msHtml+
+      '</div>';
+  }
+  box.innerHTML=html;
+}
+
+function renderToday(){
+  var t=today();
+  var od=overdueList(), td=todayList();
+  document.getElementById('sOverdue').textContent = od.length;
+  document.getElementById('sToday').textContent = td.length;
+  document.getElementById('sWater').textContent = cupsOn(t) + '/' + (state.settings.goal||8);
+  var todayOut=0, recs=state.ledger;
+  for(var i=0;i<recs.length;i++){ if(recs[i].date===t && recs[i].type==='out') todayOut += Number(recs[i].amount)||0; }
+  document.getElementById('sMoney').textContent = money(todayOut);
+
+  var box=document.getElementById('todoList'), html='';
+  var list = od.concat(td);
+  if(!list.length){
+    box.innerHTML='<div class="empty">'+icon('check')+
+      '今天没有到期或逾期的任务。<br>去左侧「长期工作」新一条主线，或到「已学习」把学到的东西记一笔。</div>';
+  } else {
+    for(var k=0;k<list.length;k++){
+      var x=list[k], over=daysBetween(x.ms.due,t)>0;
+      html +=
+        '<div class="todo'+(over?' over':'')+'">'+
+          '<span class="tag">'+(over?'逾期 '+daysBetween(x.ms.due,t)+' 天':'今天')+'</span>'+
+          '<div class="body"><strong>'+esc(x.ms.title)+'</strong>'+
+            '<small>'+esc(x.proj.name)+' · 原定 '+cnDate(x.ms.due)+'</small></div>'+
+          '<div class="act"><button class="btn sm pri" data-act="toggleMs" data-pid="'+x.proj.id+'" data-mid="'+x.ms.id+'">完成</button></div>'+
+        '</div>';
+    }
+    box.innerHTML=html;
+  }
+
+  // 本周节奏
+  var days=[], base=new Date();
+  for(var d=0; d<7; d++){
+    var dd=new Date(); dd.setDate(base.getDate()+d);
+    var ds=dstr(dd);
+    var n=pendingMilestones().filter(function(y){ return y.ms.due===ds; }).length;
+    days.push('<div style="flex:1;text-align:center;min-width:0">'+
+      '<div style="font-size:11.5px;color:var(--muted)">'+weekName(ds).slice(1)+'</div>'+
+      '<div style="height:38px;display:flex;align-items:flex-end;justify-content:center;margin:4px 0">'+
+        '<div style="width:26px;height:'+(6+n*8)+'px;max-height:38px;border-radius:5px 5px 0 0;background:'+(ds===t?'var(--primary)':'#c3d0ee')+'"></div>'+
+      '</div>'+
+      '<div style="font-size:11px;color:var(--muted)">'+(n||'—')+'</div></div>');
+  }
+  document.getElementById('weekBox').innerHTML='<div style="display:flex;gap:6px">'+days.join('')+'</div>';
+  var pend=pendingMilestones().length;
+  document.getElementById('weekSub').textContent='未来 7 天待办 '+pend+' 项 · 逾期 '+od.length+' 项';
+}
+
+function renderNews(){
+  var items=state.news.items||[];
+  document.getElementById('newsStamp').textContent = state.news.stamp || today();
+  document.getElementById('newsCount').textContent = items.length+' 条 · 已提炼关键信息';
+  var box=document.getElementById('newsList');
+  if(!items.length){ box.innerHTML='<div class="empty">'+icon('inbox')+'暂无资讯，点右上角「更新资讯」添加</div>'; return; }
+  var html='';
+  for(var i=0;i<items.length;i++){
+    var n=items[i];
+    html +=
+      '<div class="item">'+
+        '<h4>'+esc(n.title)+'</h4>'+
+        '<div class="meta"><span class="chip">'+esc(n.tag||'资讯')+'</span>'+(n.src?('<span>来源：'+esc(n.src)+'</span>'):'')+'</div>'+
+        '<p>'+esc(n.sum)+'</p>'+
+        '<div class="why">'+icon('ai')+'<span><b>关键信息：</b>'+esc(n.why)+'</span></div>'+
+        '<div class="acts">'+
+          '<button class="btn sm" data-act="newsToTopic" data-id="'+(n.id||i)+'">存为选题</button>'+
+          '<button class="btn sm" data-act="newsToTask" data-id="'+(n.id||i)+'">转为待办</button>'+
+          '<button class="btn sm danger" data-act="delNews" data-id="'+(n.id||i)+'">删除</button>'+
+        '</div>'+
+      '</div>';
+  }
+  box.innerHTML=html;
+}
+
+function renderHot(){
+  var items=state.hot.items||[];
+  document.getElementById('hotStamp').textContent = state.hot.stamp || today();
+  document.getElementById('hotCount').textContent = items.length+' 条 · 每条已配选题';
+  var box=document.getElementById('hotList');
+  if(!items.length){ box.innerHTML='<div class="empty">'+icon('inbox')+'暂无热榜，点右上角「更新热榜」添加</div>'; return; }
+  var html='';
+  for(var i=0;i<items.length;i++){
+    var h=items[i];
+    var top=(Number(h.rank)||99)<=3;
+    html +=
+      '<div class="item">'+
+        '<div class="meta"><span class="rank'+(top?' top':'')+'">'+esc(h.rank)+'</span>'+
+          '<span class="chip">'+esc(h.cat||'热点')+'</span></div>'+
+        '<h4>'+esc(h.title)+'</h4>'+
+        '<div class="why" style="background:var(--accent-soft);color:#0b6b60">'+icon('edit')+
+          '<span><b>契合选题：</b>'+esc(h.topic)+'</span></div>'+
+        '<p style="margin-top:8px">'+esc(h.angle)+'</p>'+
+        '<div class="acts">'+
+          '<button class="btn sm pri" data-act="hotToTopic" data-id="'+(h.id||i)+'">存入选题库</button>'+
+          '<button class="btn sm" data-act="hotToTask" data-id="'+(h.id||i)+'">转为待办</button>'+
+        '</div>'+
+      '</div>';
+  }
+  box.innerHTML=html;
+}
+
+function renderTopics(){
+  var box=document.getElementById('topicList');
+  document.getElementById('topicCount').textContent = state.topics.length+' 个选题';
+  if(!state.topics.length){
+    box.innerHTML='<div class="empty">'+icon('inbox')+'选题库是空的，从上方热榜或 AI 资讯里一键存入</div>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<state.topics.length;i++){
+    var t=state.topics[i];
+    html +=
+      '<div class="topic">'+
+        '<div class="fr">来自：'+esc(t.from||'手动添加')+' · '+esc(t.date||'')+'</div>'+
+        '<strong>'+esc(t.title)+'</strong>'+
+        (t.note?('<p>'+esc(t.note)+'</p>'):'')+
+        '<div class="acts">'+
+          '<button class="btn sm" data-act="topicToTask" data-id="'+t.id+'">转为待办</button>'+
+          '<button class="btn sm danger" data-act="delTopic" data-id="'+t.id+'">删除</button>'+
+        '</div>'+
+      '</div>';
+  }
+  box.innerHTML=html;
+}
+
+function renderWater(){
+  var t=today(), goal=Number(state.settings.goal)||8, cups=cupsOn(t);
+  var pct=Math.min(1, cups/goal), C=2*Math.PI*52;
+  document.getElementById('ringArc').setAttribute('stroke-dasharray', C.toFixed(1));
+  document.getElementById('ringArc').setAttribute('stroke-dashoffset', (C*(1-pct)).toFixed(1));
+  document.getElementById('cupNow').textContent=cups;
+  document.getElementById('cupGoal').textContent='/ '+goal+' 杯';
+  document.getElementById('waterGoalTxt').textContent='目标 '+goal+' 杯 · 已完成 '+Math.round(pct*100)+'%';
+
+  var grid=document.getElementById('cupGrid'), gh='';
+  var n=Math.max(goal, cups);
+  for(var i=0;i<n;i++){
+    gh += '<div class="cup'+(i<cups?' full':'')+'"><i></i></div>';
+  }
+  grid.innerHTML=gh;
+
+  var w=state.water[t]||{};
+  var note='';
+  if(w.last){ note='上次喝水：'+w.last; } else { note='今天还没有记录，点上面按钮记一杯。'; }
+  if(cups>=goal){ note='今天目标已完成，保持住。'; }
+  document.getElementById('waterNote').textContent=note;
+
+  var bars=document.getElementById('waterBars'), bh='', sum=0, cnt=0;
+  for(var d=6; d>=0; d--){
+    var ds=shiftDay(-d), c=cupsOn(ds);
+    sum+=c; if(c>0) cnt++;
+    var h=Math.round(Math.min(1, c/Math.max(goal,1))*88);
+    bh += '<div class="col"><em>'+c+'</em><div class="b'+(d===0?' today':'')+'" style="height:'+Math.max(h,3)+'px"></div><small>'+weekName(ds).slice(1)+'</small></div>';
+  }
+  bars.innerHTML=bh;
+  document.getElementById('weekAvg').textContent='日均 '+(sum/7).toFixed(1)+' 杯 · 达标 '+(cnt)+'/7 天';
+
+  document.getElementById('setGoal').value=goal;
+  document.getElementById('setGap').value=Number(state.settings.gap)||45;
+}
+
+function renderMoney(){
+  document.getElementById('monthLabel').textContent=curMonth().replace('-','年')+'月';
+  var recs=monthRecords(curMonth());
+  var inc=sumBy(recs,'in'), out=sumBy(recs,'out');
+  document.getElementById('mIn').textContent=money(inc);
+  document.getElementById('mOut').textContent=money(out);
+  var net=inc-out;
+  var netEl=document.getElementById('mNet');
+  netEl.textContent=money(net);
+  netEl.className = net>=0 ? 'inc' : 'exp';
+
+  var bud=Number(state.budget.amount)||0;
+  var pct= bud>0 ? Math.min(1, out/bud) : 0;
+  var bar=document.getElementById('budBar');
+  bar.style.width=(pct*100).toFixed(1)+'%';
+  bar.className = (bud>0 && out>bud) ? 'over' : '';
+  document.getElementById('budTxt').textContent = bud>0 ? (money(out)+' / '+money(bud)+'（'+Math.round(pct*100)+'%）') : '未设置预算';
+  document.getElementById('budInput').value = bud || '';
+
+  // 分类下拉
+  var sel=document.getElementById('mCat'), opts=state.moneyType==='out'?CAT_OUT:CAT_IN;
+  var cur=sel.value; sel.innerHTML='';
+  for(var i=0;i<opts.length;i++){ sel.innerHTML += '<option value="'+opts[i]+'">'+opts[i]+'</option>'; }
+  if(opts.indexOf(cur)>=0) sel.value=cur;
+
+  // 饼图
+  var data=catBreakdown(curMonth());
+  var total=0; for(var j=0;j<data.length;j++) total+=data[j].value;
+  var svg=document.getElementById('pieSvg'), lg=document.getElementById('pieLegend');
+  if(!total){
+    svg.innerHTML='<circle cx="75" cy="75" r="56" fill="#eef1f6"></circle><text x="75" y="80" text-anchor="middle" font-size="12" fill="#9aa2b1">本月暂无支出</text>';
+    lg.innerHTML='';
+  } else {
+    var cx=75, cy=75, r=56, ang=-Math.PI/2, sh='';
+    var lgHtml='';
+    for(var k=0;k<data.length;k++){
+      var frac=data[k].value/total, a=frac*Math.PI*2;
+      var x1=cx+r*Math.cos(ang), y1=cy+r*Math.sin(ang);
+      ang += a;
+      var x2=cx+r*Math.cos(ang), y2=cy+r*Math.sin(ang);
+      var color=PIE_COLORS[k%PIE_COLORS.length];
+      if(frac>0.9999){
+        sh += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+color+'"></circle>';
+      } else {
+        sh += '<path d="M'+cx+','+cy+' L'+x1.toFixed(2)+','+y1.toFixed(2)+' A'+r+','+r+' 0 '+(a>Math.PI?1:0)+',1 '+x2.toFixed(2)+','+y2.toFixed(2)+' Z" fill="'+color+'"></path>';
+      }
+      lgHtml += '<div><i style="background:'+color+'"></i>'+esc(data[k].label)+'<span>'+money(data[k].value)+' · '+Math.round(frac*100)+'%</span></div>';
+    }
+    sh += '<circle cx="75" cy="75" r="30" fill="#fff"></circle>'+
+          '<text x="75" y="72" text-anchor="middle" font-size="11" fill="#6b7280">总支出</text>'+
+          '<text x="75" y="88" text-anchor="middle" font-size="13" font-weight="600" fill="#1b1f26">'+money(total)+'</text>';
+    svg.innerHTML=sh; lg.innerHTML=lgHtml;
+  }
+
+  // 近 6 月对比
+  var ms=last6Months(), max=1;
+  var vals=[];
+  for(var m=0;m<ms.length;m++){
+    var rr=monthRecords(ms[m]);
+    var vi=sumBy(rr,'in'), vo=sumBy(rr,'out');
+    vals.push({m:ms[m], inc:vi, out:vo});
+    if(vi>max) max=vi; if(vo>max) max=vo;
+  }
+  var mh='';
+  for(var q=0;q<vals.length;q++){
+    var hi=Math.round(vals[q].inc/max*92), ho=Math.round(vals[q].out/max*92);
+    mh += '<div class="g"><div class="pair">'+
+      '<div class="b inc" style="height:'+Math.max(hi,3)+'px" title="收入 '+money(vals[q].inc)+'"></div>'+
+      '<div class="b out" style="height:'+Math.max(ho,3)+'px" title="支出 '+money(vals[q].out)+'"></div>'+
+      '</div><small>'+vals[q].m.slice(5)+'月</small></div>';
+  }
+  document.getElementById('monthBars').innerHTML=mh;
+
+  // 明细
+  var sorted=state.ledger.slice().sort(function(a,b){ return a.date<b.date?1:(a.date>b.date?-1:0); });
+  document.getElementById('ledgerCount').textContent=sorted.length+' 条';
+  var tb=document.getElementById('ledgerBody');
+  if(!sorted.length){
+    tb.innerHTML='<tr><td colspan="6"><div class="empty">'+icon('inbox')+'还没有流水，上面记一笔</div></td></tr>';
+    return;
+  }
+  var lh='';
+  for(var r=0;r<sorted.length;r++){
+    var it=sorted[r];
+    lh += '<tr>'+
+      '<td>'+esc(it.date.slice(5))+'</td>'+
+      '<td>'+esc(it.cat||'其他')+'</td>'+
+      '<td>'+esc(it.note||'')+'</td>'+
+      '<td>'+(it.type==='out'?'支出':'收入')+'</td>'+
+      '<td class="amt '+(it.type==='out'?'out':'in')+'">'+(it.type==='out'?'-':'+')+money(it.amount).slice(1)+'</td>'+
+      '<td><button class="del" data-act="delLedger" data-id="'+it.id+'">'+icon('trash')+'</button></td>'+
+    '</tr>';
+  }
+  tb.innerHTML=lh;
+}
+
+/* ================= 已学习（渲染） ================= */
+function findModule(mid){
+  for(var i=0;i<state.learn.length;i++){ if(state.learn[i].id===mid) return state.learn[i]; }
+  return null;
+}
+function findBlock(m, bid){
+  if(!m) return null;
+  var bs=m.blocks||[];
+  for(var i=0;i<bs.length;i++){ if(bs[i].id===bid) return bs[i]; }
+  return null;
+}
+function learnStats(){
+  var mods=state.learn.length, blocks=0, items=0, done=0, last='';
+  for(var i=0;i<state.learn.length;i++){
+    var m=state.learn[i], bs=m.blocks||[];
+    blocks += bs.length;
+    for(var j=0;j<bs.length;j++){
+      if(bs[j].type==='list'){
+        var its=bs[j].items||[];
+        for(var k=0;k<its.length;k++){ items++; if(its[k].done) done++; }
+      }
+    }
+    var u=m.updatedAt||m.createdAt||'';
+    if(u>last) last=u;
+  }
+  return {mods:mods, blocks:blocks, items:items, done:done, last:last};
+}
+
+function buildBlock(mid, b){
+  var body='';
+  if(b.type==='text'){
+    body='<p>'+esc(b.text||'（空）')+'</p>';
+  } else if(b.type==='list'){
+    var its=b.items||[];
+    if(!its.length){ body='<div style="color:var(--muted);font-size:13px">（还没有要点）</div>'; }
+    else{
+      body='<div>';
+      for(var i=0;i<its.length;i++){
+        body += '<div class="chk'+(its[i].done?' done':'')+'">'+
+            '<button class="ck'+(its[i].done?' on':'')+'" data-act="toggleItem" data-mid="'+mid+'" data-bid="'+b.id+'" data-idx="'+i+'">'+icon('check')+'</button>'+
+            '<em>'+esc(its[i].text)+'</em></div>';
+      }
+      body += '</div>';
+    }
+  } else if(b.type==='link'){
+    var u=String(b.url||'');
+    body = u ? ('<a href="'+esc(u)+'" target="_blank" rel="noopener">'+esc(u)+'</a>') : '<div style="color:var(--muted);font-size:13px">（未填链接）</div>';
+  } else if(b.type==='code'){
+    body='<pre>'+esc(b.code||'（空）')+'</pre>';
+  } else if(b.type==='quote'){
+    body='<div class="quote">'+esc(b.text||'（空）')+'</div>'+(b.from?('<div class="from">— '+esc(b.from)+'</div>'):'');
+  } else if(b.type==='image'){
+    body = b.data ? ('<img src="'+esc(b.data)+'" alt="'+esc(b.title||'图片')+'">') : '<div style="color:var(--muted);font-size:13px">（图片未加载）</div>';
+  }
+
+  var tools=
+    '<button class="icbtn" data-act="moveBlock" data-mid="'+mid+'" data-bid="'+b.id+'" data-dir="-1" title="上移">'+icon('up')+'</button>'+
+    '<button class="icbtn" data-act="moveBlock" data-mid="'+mid+'" data-bid="'+b.id+'" data-dir="1" title="下移">'+icon('down')+'</button>'+
+    '<button class="icbtn" data-act="editBlock" data-mid="'+mid+'" data-bid="'+b.id+'" title="编辑">'+icon('edit')+'</button>'+
+    '<button class="icbtn dan" data-act="delBlock" data-mid="'+mid+'" data-bid="'+b.id+'" title="删除">'+icon('trash')+'</button>';
+
+  return '<div class="blk">'+
+      '<div class="blk-hd"><span class="blk-tag">'+ltypeName(b.type)+'</span>'+
+        '<span class="blk-t">'+esc(b.title||'')+'</span>'+
+        '<span class="blk-tools">'+tools+'</span></div>'+
+      body+
+    '</div>';
+}
+
+function buildModule(m){
+  var bs=m.blocks||[], bh='';
+  for(var j=0;j<bs.length;j++){ bh += buildBlock(m.id, bs[j]); }
+  var addHtml='';
+  for(var t=0;t<LTYPES.length;t++){
+    addHtml += '<button class="btn sm" data-act="addBlock" data-mid="'+m.id+'" data-t="'+LTYPES[t].t+'">+ '+LTYPES[t].n+'</button>';
+  }
+  return '<div class="lmod'+(m.collapsed?' collapsed':'')+'">'+
+      '<div class="lmod-hd">'+
+        '<div class="nm" data-act="foldModule" data-mid="'+m.id+'">'+esc(m.name)+
+          '<small>'+esc(m.desc||(bs.length?(bs.length+' 块内容'):'暂无内容'))+' · 更新于 '+cnDate(m.updatedAt||m.createdAt||today())+'</small>'+
+        '</div>'+
+        '<div class="tools">'+
+          '<button class="icbtn" data-act="moveModule" data-mid="'+m.id+'" data-dir="-1" title="上移">'+icon('up')+'</button>'+
+          '<button class="icbtn" data-act="moveModule" data-mid="'+m.id+'" data-dir="1" title="下移">'+icon('down')+'</button>'+
+          '<button class="icbtn" data-act="editModule" data-mid="'+m.id+'" title="重命名">'+icon('edit')+'</button>'+
+          '<button class="icbtn dan" data-act="delModule" data-mid="'+m.id+'" title="删除模块">'+icon('trash')+'</button>'+
+          '<button class="icbtn" data-act="foldModule" data-mid="'+m.id+'" title="展开/收起">'+icon('fold')+'</button>'+
+        '</div>'+
+      '</div>'+
+      '<div class="lmod-bd">'+
+        (bs.length ? bh : '<div class="empty" style="padding:14px 8px">'+icon('inbox')+'这个模块还是空的，从下面挑一种内容加进去</div>')+
+        '<div class="addblk">'+addHtml+
+          '<button class="btn sm" data-act="learnToTask" data-mid="'+m.id+'" title="放进长期工作做复习提醒">+ 加入复习待办</button>'+
+        '</div>'+
+      '</div>'+
+    '</div>';
+}
+
+function renderLearn(){
+  var st=learnStats();
+  document.getElementById('learnStats').innerHTML=
+    '<div class="lstat"><span>学习模块</span><b>'+st.mods+'</b></div>'+
+    '<div class="lstat"><span>内容块</span><b>'+st.blocks+'</b></div>'+
+    '<div class="lstat"><span>要点掌握</span><b>'+st.done+' / '+st.items+'</b></div>'+
+    '<div class="lstat"><span>最近更新</span><b style="font-size:14.5px">'+(st.last?cnDate(st.last):'—')+'</b></div>';
+  document.getElementById('learnCount').textContent = st.mods+' 个模块 · '+st.blocks+' 块内容 · 可无限叠加';
+
+  var box=document.getElementById('learnList');
+  if(!st.mods){
+    box.innerHTML='<div class="empty">'+icon('book')+
+      '<div style="margin-bottom:12px">还没有学习模块。<br>一个模块 = 一个学习主题，里面可以叠加任意多种内容：笔记、清单、链接、代码、摘录、图片。</div>'+
+      '<div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap">'+
+        '<button class="btn sm pri" data-act="addLearnModule">+ 建第一个模块</button>'+
+        '<button class="btn sm" data-act="loadDemoModule">载入示例模块看看</button>'+
+      '</div></div>';
+    return;
+  }
+  var html='';
+  for(var i=0;i<state.learn.length;i++){ html += buildModule(state.learn[i]); }
+  box.innerHTML=html;
+}
+
+function renderNav(){
+  var od=overdueList().length, td=todayList().length;
+  var items=[
+    {id:'today', name:'今日总览', ic:'today',  badge:od+td},
+    {id:'ai',    name:'AI 资讯',  ic:'ai',     badge:0},
+    {id:'hot',   name:'抖音选题', ic:'hot',    badge:0},
+    {id:'learn', name:'已学习',   ic:'book',   badge:0},
+    {id:'water', name:'喝水打卡', ic:'water',  badge:0},
+    {id:'money', name:'记账理财', ic:'money',  badge:0}
+  ];
+  var nav='', tabs='';
+  for(var i=0;i<items.length;i++){
+    var it=items[i], on=(state.view===it.id);
+    nav += '<button class="'+(on?'on':'')+'" data-act="go" data-v="'+it.id+'">'+icon(it.ic)+
+           '<span>'+it.name+'</span>'+(it.badge?('<span class="dot">'+it.badge+'</span>'):'')+'</button>';
+    tabs += '<button class="'+(on?'on':'')+'" data-act="go" data-v="'+it.id+'">'+icon(it.ic)+'<span>'+it.name+'</span></button>';
+  }
+  document.getElementById('navList').innerHTML=nav;
+  document.getElementById('tabbar').innerHTML=tabs;
+  var titles={today:'今日总览',ai:'AI 资讯',hot:'抖音热榜与选题',learn:'已学习',water:'喝水打卡',money:'记账理财'};
+  document.getElementById('viewTitle').textContent=titles[state.view]||'';
+  var views=document.querySelectorAll('.view');
+  for(var v=0;v<views.length;v++){
+    views[v].classList.toggle('on', views[v].id==='view-'+state.view);
+  }
+}
+
+/* ---- 提醒（独立，不触发渲染） ---- */
+var remindTimer=null;
+function checkRemind(){
+  var box=document.getElementById('remindBox');
+  if(state.view!=='water'){ box.classList.remove('on'); return; }
+  var s=state.settings;
+  var gap=(Number(s.gap)||45)*60000;
+  var now=Date.now();
+  var last=s.lastDrink ? new Date(s.lastDrink).getTime() : 0;
+  var snooze=Number(s.snoozeUntil)||0;
+  var goal=Number(s.goal)||8;
+  if(cupsOn(today())>=goal){ box.classList.remove('on'); return; }
+  if(now < snooze){ box.classList.remove('on'); return; }
+  if(!last || (now-last)>=gap){
+    var mins = last ? Math.round((now-last)/60000) : 0;
+    document.getElementById('remindTxt').textContent =
+      last ? ('已经 '+mins+' 分钟没喝水了，起来接一杯') : '今天还没喝水，先来一杯';
+    box.classList.add('on');
+  } else {
+    box.classList.remove('on');
+  }
+}
+
+/* ================= 统一刷新入口 ================= */
+function refreshAll(){
+  reloadAll();
+  renderBrand();
+  renderNav();
+  renderProjects();
+  renderToday();
+  renderNews();
+  renderHot();
+  renderTopics();
+  renderLearn();
+  renderWater();
+  renderMoney();
+  checkRemind();
+  var chip=document.getElementById('syncChip');
+  chip.innerHTML = icon('check')+'本地已保存';
+}
+
+/* ================= 事件层 ================= */
+function go(v){ state.view=v; renderNav(); renderToday(); renderWater(); checkRemind(); window.scrollTo(0,0); }
+
+function findProj(pid){ for(var i=0;i<state.projects.length;i++){ if(state.projects[i].id===pid) return state.projects[i]; } return null; }
+
+function toggleMs(pid, mid){
+  var p=findProj(pid); if(!p) return;
+  for(var i=0;i<p.milestones.length;i++){
+    if(p.milestones[i].id===mid){ p.milestones[i].done=!p.milestones[i].done; break; }
+  }
+  save(K.projects,state.projects); refreshAll();
+  toast('已更新进度');
+}
+function delMs(pid, mid){
+  var p=findProj(pid); if(!p) return;
+  p.milestones=p.milestones.filter(function(m){ return m.id!==mid; });
+  save(K.projects,state.projects); refreshAll(); toast('已删除');
+}
+function addMs(pid){
+  var p=findProj(pid); if(!p) return;
+  openDlg('新增里程碑','属于：'+p.name,
+    '<div class="field"><label>任务</label><input type="text" id="dlgMsTitle" placeholder="例如：完成客户提案初稿"></div>'+
+    '<div class="field" style="margin-top:10px"><label>截止日期</label><input type="date" id="dlgMsDue" value="'+today()+'"></div>',
+    '添加', function(){
+      var t=document.getElementById('dlgMsTitle').value.trim();
+      var d=document.getElementById('dlgMsDue').value||today();
+      if(!t){ toast('请填写任务内容'); return false; }
+      p.milestones.push({id:uid(), title:t, due:d, done:false});
+      save(K.projects,state.projects); refreshAll(); toast('已添加'); return true;
+    });
+}
+function addProj(){
+  openDlg('新增长期工作','长期工作是你一个人公司的主线，每个下面挂具体里程碑',
+    '<div class="field"><label>名称</label><input type="text" id="dlgPName" placeholder="例如：接单交付主业"></div>'+
+    '<div class="field" style="margin-top:10px"><label>目标（选填）</label><input type="text" id="dlgPGoal" placeholder="例如：本月完成 5 单"></div>',
+    '创建', function(){
+      var n=document.getElementById('dlgPName').value.trim();
+      if(!n){ toast('请填写名称'); return false; }
+      state.projects.push({id:uid(), name:n, goal:document.getElementById('dlgPGoal').value.trim(), milestones:[]});
+      save(K.projects,state.projects); refreshAll(); toast('已创建，接着加里程碑吧'); return true;
+    });
+}
+function addWater(){
+  var t=today(), w=state.water[t]||{cups:0,last:''};
+  w.cups=(Number(w.cups)||0)+1;
+  var d=new Date();
+  w.last=pad(d.getHours())+':'+pad(d.getMinutes());
+  state.water[t]=w;
+  state.settings.lastDrink=new Date().toISOString();
+  state.settings.snoozeUntil=0;
+  save(K.water,state.water); save(K.settings,state.settings);
+  refreshAll();
+  if(w.cups>=(Number(state.settings.goal)||8)) toast('今日喝水目标达成');
+  else toast('已记录 '+w.cups+' 杯');
+}
+function undoWater(){
+  var t=today(), w=state.water[t];
+  if(!w || !(Number(w.cups)>0)){ toast('今天还没有记录'); return; }
+  w.cups=Number(w.cups)-1;
+  if(w.cups<0) w.cups=0;
+  state.water[t]=w; save(K.water,state.water); refreshAll(); toast('已撤销一杯');
+}
+function addMoney(){
+  var amt=parseFloat(document.getElementById('mAmt').value);
+  if(!(amt>0)){ toast('请填写有效金额'); return; }
+  var rec={
+    id:uid(),
+    date:document.getElementById('mDate').value||today(),
+    type:state.moneyType,
+    amount:Math.round(amt*100)/100,
+    cat:document.getElementById('mCat').value,
+    note:document.getElementById('mNote').value.trim()
+  };
+  state.ledger.push(rec); save(K.ledger,state.ledger);
+  document.getElementById('mAmt').value=''; document.getElementById('mNote').value='';
+  refreshAll(); toast('已记录 '+(rec.type==='out'?'支出 ':'收入 ')+money(rec.amount));
+}
+function addTopic(title, note, from){
+  state.topics.unshift({id:uid(), title:title, note:note||'', from:from||'手动添加', date:today()});
+  save(K.topics,state.topics);
+}
+function toTask(title, days){
+  if(!state.projects.length){ toast('先在左侧创建一个长期工作'); return; }
+  var p=state.projects[0];
+  p.milestones.push({id:uid(), title:title, due:shiftDay(days||1), done:false});
+  save(K.projects,state.projects); refreshAll();
+  toast('已加入「'+p.name+'」待办');
+}
+
+/* ---- 已学习：模块与内容块 ---- */
+function touchModule(m){ m.updatedAt=today(); }
+
+function addLearnModule(){
+  openDlg('新增学习模块','一个模块 = 一个学习主题。建好后可以往里叠加任意多种内容块，顺序随时可调。',
+    '<div class="field"><label>模块名称</label><input type="text" id="dlgLName" placeholder="例如：AI 工具与工作流"></div>'+
+    '<div class="field" style="margin-top:10px"><label>一句话说明（选填）</label><input type="text" id="dlgLDesc" placeholder="例如：把重复流程 agent 化的实践记录"></div>',
+    '创建', function(){
+      var n=document.getElementById('dlgLName').value.trim();
+      if(!n){ toast('请填写模块名称'); return false; }
+      state.learn.push({
+        id:uid(), name:n, desc:document.getElementById('dlgLDesc').value.trim(),
+        blocks:[], collapsed:false, createdAt:today(), updatedAt:today()
+      });
+      save(K.learn,state.learn); refreshAll(); toast('模块已创建，接着往里加内容');
+      return true;
+    });
+}
+function loadDemoModule(){
+  state.learn.push({
+    id:uid(), name:'示例：AI 资讯怎么用起来', desc:'一个模块叠加了 4 种内容，看完可删掉',
+    collapsed:false, createdAt:today(), updatedAt:today(),
+    blocks:[
+      {id:uid(), type:'text', title:'今天的核心结论',
+       text:'看 AI 新闻别追新，只问一句：这条能让我省时间，还是省钱？两条都不占就直接划走。'},
+      {id:uid(), type:'list', title:'待消化要点',
+       items:[{text:'把 AI 摘要接进晨间 30 分钟流程',done:false},
+              {text:'重新算一遍 token 成本',done:true},
+              {text:'整理 3 条可落地的选题',done:false}]},
+      {id:uid(), type:'quote', title:'',
+       text:'工具的价值不在它多强，而在你多常常用它。', from:'自己'},
+      {id:uid(), type:'code', title:'每日选题 prompt',
+       code:'你是我的内容编辑。把下面这条新闻改成一个适合一人公司的选题，\n输出：1 个标题 + 3 个切入角度 + 1 个可复用的结尾引导。'}
+    ]
+  });
+  save(K.learn,state.learn); refreshAll(); toast('示例模块已载入');
+}
+function editModule(mid){
+  var m=findModule(mid); if(!m) return;
+  openDlg('编辑模块','修改名称与说明，模块里的内容块不受影响',
+    '<div class="field"><label>模块名称</label><input type="text" id="dlgLName" value="'+esc(m.name)+'"></div>'+
+    '<div class="field" style="margin-top:10px"><label>一句话说明</label><input type="text" id="dlgLDesc" value="'+esc(m.desc||'')+'"></div>',
+    '保存', function(){
+      var n=document.getElementById('dlgLName').value.trim();
+      if(!n){ toast('名称不能为空'); return false; }
+      m.name=n; m.desc=document.getElementById('dlgLDesc').value.trim(); touchModule(m);
+      save(K.learn,state.learn); refreshAll(); toast('已保存');
+      return true;
+    });
+}
+function delModule(mid){
+  var m=findModule(mid); if(!m) return;
+  var n=(m.blocks||[]).length;
+  openDlg('删除模块','将删除「'+m.name+'」'+(n?('及其 '+n+' 块内容'):'')+'，不可恢复。确定删除？','',
+    '确认删除', function(){
+      state.learn=state.learn.filter(function(x){ return x.id!==mid; });
+      save(K.learn,state.learn); refreshAll(); toast('已删除');
+      return true;
+    });
+}
+function moveModule(mid, dir){
+  var i=-1;
+  for(var k=0;k<state.learn.length;k++){ if(state.learn[k].id===mid){ i=k; break; } }
+  if(i<0) return;
+  var j=i+Number(dir);
+  if(j<0 || j>=state.learn.length) return;
+  var tmp=state.learn[i]; state.learn[i]=state.learn[j]; state.learn[j]=tmp;
+  save(K.learn,state.learn); refreshAll();
+}
+function foldModule(mid){
+  var m=findModule(mid); if(!m) return;
+  m.collapsed=!m.collapsed; save(K.learn,state.learn); refreshAll();
+}
+function learnToTask(mid){
+  var m=findModule(mid); if(!m) return;
+  toTask('复习：'+m.name, 3);
+}
+
+var pendingImg='';
+function compressImage(file, cb){
+  var fr=new FileReader();
+  fr.onload=function(){
+    var img=new Image();
+    img.onload=function(){
+      var maxW=800, w=img.width, h=img.height;
+      if(w>maxW){ h=Math.round(h*maxW/w); w=maxW; }
+      var cv=document.createElement('canvas'); cv.width=w; cv.height=h;
+      cv.getContext('2d').drawImage(img,0,0,w,h);
+      try{ cb(cv.toDataURL('image/jpeg',0.82)); }catch(e){ cb(''); }
+    };
+    img.onerror=function(){ cb(''); };
+    img.src=fr.result;
+  };
+  fr.onerror=function(){ cb(''); };
+  fr.readAsDataURL(file);
+}
+
+function editBlock(mid, bid, type){
+  var m=findModule(mid); if(!m) return;
+  var b = bid ? findBlock(m,bid) : null;
+  var isNew = !b;
+  if(!b){ b={id:uid(), type:type||'text', title:'', text:'', url:'', code:'', from:'', data:'', items:[]}; }
+  var t=b.type;
+  pendingImg='';
+
+  var ta=' class="ta" style="width:100%;min-height:118px;border:1px solid var(--line);border-radius:11px;padding:10px;font-size:15px;line-height:1.6"';
+  var taCode=' style="width:100%;min-height:130px;border:1px solid var(--line);border-radius:11px;padding:10px;font-size:13.5px;line-height:1.6;font-family:ui-monospace,Menlo,Consolas,monospace"';
+  var html='<div class="field"><label>小标题（选填）</label><input type="text" id="dlgBTitle" value="'+esc(b.title||'')+'"></div>';
+  if(t==='text'){
+    html += '<div class="field" style="margin-top:10px"><label>内容</label><textarea id="dlgBText"'+ta+'>'+esc(b.text||'')+'</textarea></div>';
+  } else if(t==='list'){
+    var lines=(b.items||[]).map(function(x){ return x.text; }).join('\n');
+    html += '<div class="field" style="margin-top:10px"><label>每行一条要点（已勾选的会保留状态）</label>'+
+            '<textarea id="dlgBList"'+ta+' placeholder="一行一条">'+esc(lines)+'</textarea></div>';
+  } else if(t==='link'){
+    html += '<div class="field" style="margin-top:10px"><label>链接地址</label><input type="url" id="dlgBUrl" value="'+esc(b.url||'')+'" placeholder="https://"></div>';
+  } else if(t==='code'){
+    html += '<div class="field" style="margin-top:10px"><label>代码 / 提示词</label>'+
+            '<textarea id="dlgBCode"'+taCode+'>'+esc(b.code||'')+'</textarea></div>';
+  } else if(t==='quote'){
+    html += '<div class="field" style="margin-top:10px"><label>摘录内容</label><textarea id="dlgBText"'+ta+'>'+esc(b.text||'')+'</textarea></div>'+
+            '<div class="field" style="margin-top:10px"><label>出处（选填）</label><input type="text" id="dlgBFrom" value="'+esc(b.from||'')+'" placeholder="书名 / 作者 / 来源"></div>';
+  } else if(t==='image'){
+    html += '<div class="field" style="margin-top:10px"><label>选择图片（自动压缩到 800px 宽）</label>'+
+            '<input type="file" id="dlgBFile" accept="image/*" style="font-size:14px"></div>'+
+            '<div id="dlgBPrev" style="margin-top:10px">'+(b.data?('<img src="'+esc(b.data)+'" style="max-width:100%;border-radius:9px">'):'')+'</div>';
+  }
+
+  var names={text:'文本笔记',list:'要点清单',link:'链接收藏',code:'代码·提示词',quote:'金句摘录',image:'图片'};
+  openDlg((isNew?'添加':'编辑')+(names[t]||'内容'), '所属模块：'+m.name, html, '保存', function(){
+    b.title=(document.getElementById('dlgBTitle').value||'').trim();
+    if(t==='text'){
+      b.text=(document.getElementById('dlgBText').value||'').trim();
+      if(!b.text && !b.title){ toast('写点内容再保存'); return false; }
+    } else if(t==='list'){
+      var raw=(document.getElementById('dlgBList').value||'').split(/\r?\n/);
+      var old=b.items||[], out=[];
+      for(var i=0;i<raw.length;i++){
+        var s=raw[i].trim(); if(!s) continue;
+        out.push({text:s, done:(old[i]? !!old[i].done : false)});
+      }
+      if(!out.length){ toast('至少写一条要点'); return false; }
+      b.items=out;
+    } else if(t==='link'){
+      b.url=(document.getElementById('dlgBUrl').value||'').trim();
+      if(!b.url){ toast('请填写链接'); return false; }
+      if(!/^(https?:)?\/\//i.test(b.url)) b.url='https://'+b.url.replace(/^\/+/,'');
+    } else if(t==='code'){
+      b.code=(document.getElementById('dlgBCode').value||'');
+      if(!b.code.trim()){ toast('内容不能为空'); return false; }
+    } else if(t==='quote'){
+      b.text=(document.getElementById('dlgBText').value||'').trim();
+      b.from=(document.getElementById('dlgBFrom').value||'').trim();
+      if(!b.text){ toast('摘录内容不能为空'); return false; }
+    } else if(t==='image'){
+      if(pendingImg){ b.data=pendingImg; }
+      if(!b.data){ toast('请先选择一张图片'); return false; }
+    }
+    if(isNew){ m.blocks.push(b); }
+    touchModule(m);
+    save(K.learn,state.learn); refreshAll(); toast(isNew?'已添加内容块':'已保存');
+    return true;
+  });
+
+  if(t==='image'){
+    var fi=document.getElementById('dlgBFile');
+    if(fi) fi.addEventListener('change', function(e){
+      var f=e.target.files && e.target.files[0];
+      if(!f) return;
+      if(f.size > 12*1024*1024){ toast('图片太大了，换一张小一点的'); return; }
+      compressImage(f, function(dataUrl){
+        if(!dataUrl){ toast('图片读取失败'); return; }
+        pendingImg=dataUrl;
+        document.getElementById('dlgBPrev').innerHTML='<img src="'+dataUrl+'" style="max-width:100%;border-radius:9px">';
+      });
+    });
+  }
+}
+function delBlock(mid, bid){
+  var m=findModule(mid); if(!m) return;
+  m.blocks=(m.blocks||[]).filter(function(x){ return x.id!==bid; });
+  touchModule(m); save(K.learn,state.learn); refreshAll(); toast('已删除');
+}
+function moveBlock(mid, bid, dir){
+  var m=findModule(mid); if(!m) return;
+  var bs=m.blocks||[], i=-1;
+  for(var k=0;k<bs.length;k++){ if(bs[k].id===bid){ i=k; break; } }
+  if(i<0) return;
+  var j=i+Number(dir);
+  if(j<0 || j>=bs.length) return;
+  var tmp=bs[i]; bs[i]=bs[j]; bs[j]=tmp;
+  save(K.learn,state.learn); refreshAll();
+}
+function toggleItem(mid, bid, idx){
+  var m=findModule(mid); if(!m) return;
+  var b=findBlock(m,bid); if(!b || !b.items || !b.items[idx]) return;
+  b.items[idx].done=!b.items[idx].done;
+  touchModule(m); save(K.learn,state.learn); refreshAll();
+}
+
+/* ---- 导入导出 ---- */
+function exportJSON(){
+  var data={
+    _app:'solo-workbench', _version:1, _exportedAt:new Date().toISOString(),
+    projects:state.projects, water:state.water, ledger:state.ledger,
+    budget:state.budget, topics:state.topics, settings:state.settings,
+    news:state.news, hot:state.hot, learn:state.learn
+  };
+  download('一人公司工作台备份-'+today()+'.json', JSON.stringify(data,null,2), 'application/json');
+  toast('备份已导出');
+}
+function exportCSV(){
+  var rows=[['日期','类型','分类','备注','金额']];
+  var sorted=state.ledger.slice().sort(function(a,b){ return a.date<b.date?1:-1; });
+  for(var i=0;i<sorted.length;i++){
+    var r=sorted[i];
+    rows.push([r.date, r.type==='out'?'支出':'收入', r.cat||'', r.note||'', (r.type==='out'?'-':'')+r.amount]);
+  }
+  var csv=rows.map(function(r){
+    return r.map(function(c){ return '"'+String(c).replace(/"/g,'""')+'"'; }).join(',');
+  }).join('\r\n');
+  download('流水明细-'+today()+'.csv', '\ufeff'+csv, 'text/csv;charset=utf-8');
+  toast('CSV 已导出');
+}
+function download(name, content, type){
+  var blob=new Blob([content],{type:type});
+  var url=URL.createObjectURL(blob);
+  var a=document.createElement('a'); a.href=url; a.download=name;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  setTimeout(function(){ URL.revokeObjectURL(url); },1000);
+}
+function importJSON(){
+  openDlg('导入恢复','把之前导出的 JSON 内容粘贴进来（支持上千条数据，会整体覆盖当前数据）',
+    '<textarea id="dlgImport" placeholder=\'{"_app":"solo-workbench", ...}\'></textarea>'+
+    '<div style="margin-top:10px"><input type="file" id="dlgFile" accept=".json,application/json" style="font-size:14px"></div>',
+    '导入并覆盖', function(){
+      var txt=document.getElementById('dlgImport').value.trim();
+      if(!txt){ toast('请粘贴内容或选择文件'); return false; }
+      try{
+        var d=JSON.parse(txt);
+        if(!d || typeof d!=='object') throw new Error('bad');
+        applyImport(d); return true;
+      }catch(e){ toast('解析失败，请检查 JSON 格式'); return false; }
+    });
+  document.getElementById('dlgFile').addEventListener('change', function(e){
+    var f=e.target.files && e.target.files[0]; if(!f) return;
+    var fr=new FileReader();
+    fr.onload=function(){ document.getElementById('dlgImport').value=String(fr.result||''); };
+    fr.readAsText(f,'utf-8');
+  });
+}
+function applyImport(d){
+  if(d.projects) save(K.projects,d.projects);
+  if(d.water)    save(K.water,d.water);
+  if(d.ledger)   save(K.ledger,d.ledger);
+  if(d.budget)   save(K.budget,d.budget);
+  if(d.topics)   save(K.topics,d.topics);
+  if(d.settings) save(K.settings,d.settings);
+  if(d.news)     save(K.news,d.news);
+  if(d.hot)      save(K.hot,d.hot);
+  if(d.learn)    save(K.learn,d.learn);
+  save(K.seeded,true); save(K.seeded2,true);
+  refreshAll();
+  toast('数据已恢复');
+}
+function clearAll(){
+  openDlg('清空数据','这会删除全部长期工作、待办、已学习模块、流水、喝水记录和选题，且不可恢复。建议先导出备份。确定继续？','',
+    '确认清空', function(){
+      openDlg('再次确认','真的要清空吗？此操作无法撤销。','','我确定，清空', function(){
+        for(var k in K){ if(Object.prototype.hasOwnProperty.call(K,k)) localStorage.removeItem(K[k]); }
+        seedIfNeeded(); refreshAll(); toast('已清空并重置为示例数据'); return true;
+      });
+      return true;
+    });
+}
+
+/* ---- 资讯/热榜更新 ---- */
+function updateNews(){
+  openDlg('更新 AI 资讯','每行一条，用竖线分隔：<b>标题 | 关键信息 | 一句话摘要</b>。也可以直接粘贴 JSON 数组。',
+    '<textarea id="dlgNews" placeholder="模型发布 | 某模型降价 40% | 官方宣布 API 价格下调，长文本场景成本减半"></textarea>',
+    '保存', function(){
+      var txt=document.getElementById('dlgNews').value.trim();
+      if(!txt){ toast('请粘贴内容'); return false; }
+      var arr=parseFeed(txt, ['title','why','sum']);
+      if(!arr.length){ toast('没有解析到有效条目'); return false; }
+      state.news={stamp:today(), items:arr};
+      save(K.news,state.news); refreshAll(); toast('已更新 '+arr.length+' 条'); return true;
+    });
+}
+function updateHot(){
+  openDlg('更新抖音热榜','每行一条，用竖线分隔：<b>排名 | 标题 | 契合选题 | 切入角度</b>。也可以直接粘贴 JSON 数组。',
+    '<textarea id="dlgHot" placeholder="1 | 某某热点事件 | 《一人公司如何借这个热点做内容》 | 从个人经历切入，给出可复用模板"></textarea>',
+    '保存', function(){
+      var txt=document.getElementById('dlgHot').value.trim();
+      if(!txt){ toast('请粘贴内容'); return false; }
+      var arr=parseFeed(txt, ['rank','title','topic','angle']);
+      if(!arr.length){ toast('没有解析到有效条目'); return false; }
+      state.hot={stamp:today(), items:arr};
+      save(K.hot,state.hot); refreshAll(); toast('已更新 '+arr.length+' 条'); return true;
+    });
+}
+function parseFeed(txt, keys){
+  var out=[];
+  if(txt.charAt(0)==='[' || txt.charAt(0)==='{'){
+    try{
+      var d=JSON.parse(txt);
+      var list = Array.isArray(d) ? d : (d.items||[]);
+      for(var i=0;i<list.length;i++){
+        var o=list[i]; if(!o||typeof o!=='object') continue;
+        if(!o.title) continue;
+        o.id=o.id||uid(); out.push(o);
+      }
+      if(out.length) return out;
+    }catch(e){ /* 落回文本解析 */ }
+  }
+  var lines=txt.split(/\r?\n/);
+  for(var j=0;j<lines.length;j++){
+    var line=lines[j].trim();
+    if(!line) continue;
+    var parts=line.split(/\s*[|｜]\s*/);
+    if(parts.length<2) continue;
+    var obj={id:uid()};
+    for(var k=0;k<keys.length;k++){ obj[keys[k]]=(parts[k]||'').trim(); }
+    if(!obj.title) continue;
+    if(keys[0]==='rank'){ obj.rank=Number(obj.rank)||(out.length+1); obj.cat=obj.cat||'热点'; }
+    else { obj.tag=obj.tag||'资讯'; }
+    out.push(obj);
+  }
+  return out;
+}
+
+/* ================= 事件绑定 ================= */
+document.addEventListener('click', function(e){
+  var el=e.target.closest ? e.target.closest('[data-act]') : null;
+  if(!el) return;
+  var act=el.getAttribute('data-act');
+  var id=el.getAttribute('data-id');
+  var pid=el.getAttribute('data-pid');
+  var mid=el.getAttribute('data-mid');
+  var bid=el.getAttribute('data-bid');
+  var dir=el.getAttribute('data-dir');
+  var ty=el.getAttribute('data-t');
+
+  if(act==='go'){ go(el.getAttribute('data-v')); return; }
+
+  /* ---- 已学习 ---- */
+  if(act==='addLearnModule'){ addLearnModule(); return; }
+  if(act==='loadDemoModule'){ loadDemoModule(); return; }
+  if(act==='editModule'){ editModule(mid); return; }
+  if(act==='delModule'){ delModule(mid); return; }
+  if(act==='moveModule'){ moveModule(mid, dir); return; }
+  if(act==='foldModule'){ foldModule(mid); return; }
+  if(act==='learnToTask'){ learnToTask(mid); return; }
+  if(act==='addBlock'){ editBlock(mid, null, ty); return; }
+  if(act==='editBlock'){ editBlock(mid, bid); return; }
+  if(act==='delBlock'){ delBlock(mid, bid); return; }
+  if(act==='moveBlock'){ moveBlock(mid, bid, dir); return; }
+  if(act==='toggleItem'){ toggleItem(mid, bid, parseInt(el.getAttribute('data-idx'),10)); return; }
+  if(act==='toggleMs'){ toggleMs(pid,mid); return; }
+  if(act==='delMs'){ delMs(pid,mid); return; }
+  if(act==='addMs'){ addMs(pid); return; }
+
+  if(act==='newsToTopic'){
+    var n=null; var na=state.news.items||[];
+    for(var i=0;i<na.length;i++){ if((na[i].id||i)==id) { n=na[i]; break; } }
+    if(n){ addTopic(n.title, n.why, 'AI 资讯'); save(K.topics,state.topics); refreshAll(); toast('已存入选题库'); }
+    return;
+  }
+  if(act==='newsToTask'){
+    var n2=null; var nb=state.news.items||[];
+    for(var j=0;j<nb.length;j++){ if((nb[j].id||j)==id){ n2=nb[j]; break; } }
+    if(n2){ toTask('跟进：'+n2.title, 2); }
+    return;
+  }
+  if(act==='delNews'){
+    state.news.items=(state.news.items||[]).filter(function(x,ix){ return (x.id||ix)!=id; });
+    save(K.news,state.news); refreshAll(); toast('已删除'); return;
+  }
+  if(act==='hotToTopic'){
+    var h=null; var ha=state.hot.items||[];
+    for(var k=0;k<ha.length;k++){ if((ha[k].id||k)==id){ h=ha[k]; break; } }
+    if(h){ addTopic(h.topic||h.title, h.angle, '抖音热榜'); save(K.topics,state.topics); refreshAll(); toast('已存入选题库'); }
+    return;
+  }
+  if(act==='hotToTask'){
+    var h2=null; var hb=state.hot.items||[];
+    for(var q=0;q<hb.length;q++){ if((hb[q].id||q)==id){ h2=hb[q]; break; } }
+    if(h2){ toTask('选题落地：'+(h2.topic||h2.title), 1); }
+    return;
+  }
+  if(act==='delTopic'){
+    state.topics=state.topics.filter(function(t){ return t.id!==id; });
+    save(K.topics,state.topics); refreshAll(); toast('已删除'); return;
+  }
+  if(act==='topicToTask'){
+    var tp=null;
+    for(var r=0;r<state.topics.length;r++){ if(state.topics[r].id===id){ tp=state.topics[r]; break; } }
+    if(tp){ toTask(tp.title, 1); }
+    return;
+  }
+  if(act==='delLedger'){
+    state.ledger=state.ledger.filter(function(x){ return x.id!==id; });
+    save(K.ledger,state.ledger); refreshAll(); toast('已删除'); return;
+  }
+});
+
+document.getElementById('addProjBtn').addEventListener('click', addProj);
+document.getElementById('addLearnBtn').addEventListener('click', addLearnModule);
+document.getElementById('projToggle').addEventListener('click', function(){
+  var p=document.getElementById('projPanel');
+  p.classList.toggle('proj-collapsed');
+});
+document.getElementById('addCupBtn').addEventListener('click', addWater);
+document.getElementById('undoCupBtn').addEventListener('click', undoWater);
+document.getElementById('remindDone').addEventListener('click', function(){ addWater(); });
+document.getElementById('remindSnooze').addEventListener('click', function(){
+  state.settings.snoozeUntil=Date.now()+20*60000;
+  save(K.settings,state.settings); checkRemind(); toast('20 分钟后再提醒');
+});
+document.getElementById('saveWaterSet').addEventListener('click', function(){
+  var g=parseInt(document.getElementById('setGoal').value,10);
+  var p=parseInt(document.getElementById('setGap').value,10);
+  state.settings.goal = g>0 ? Math.min(g,20) : 8;
+  state.settings.gap  = p>=15 ? Math.min(p,240) : 45;
+  save(K.settings,state.settings); refreshAll(); toast('设置已保存');
+});
+document.getElementById('addMoneyBtn').addEventListener('click', addMoney);
+document.getElementById('saveBud').addEventListener('click', function(){
+  var v=parseFloat(document.getElementById('budInput').value);
+  state.budget={month:curMonth(), amount: v>0? v : 0};
+  save(K.budget,state.budget); refreshAll(); toast('预算已保存');
+});
+document.getElementById('exportBtn').addEventListener('click', exportJSON);
+document.getElementById('importBtn').addEventListener('click', importJSON);
+document.getElementById('csvBtn').addEventListener('click', exportCSV);
+document.getElementById('clearBtn').addEventListener('click', clearAll);
+
+var segBtns=document.querySelectorAll('#typeSeg button');
+for(var s=0;s<segBtns.length;s++){
+  segBtns[s].addEventListener('click', function(){
+    state.moneyType=this.getAttribute('data-type');
+    var all=document.querySelectorAll('#typeSeg button');
+    for(var i=0;i<all.length;i++){
+      all[i].className = (all[i].getAttribute('data-type')===state.moneyType) ? ('on '+state.moneyType) : '';
+    }
+    renderMoney();
+  });
+}
+
+var newsRefresh=document.createElement('button');
+newsRefresh.className='btn sm'; newsRefresh.textContent='更新资讯';
+newsRefresh.addEventListener('click', updateNews);
+var hotRefresh=document.createElement('button');
+hotRefresh.className='btn sm'; hotRefresh.textContent='更新热榜';
+hotRefresh.addEventListener('click', updateHot);
+
+document.getElementById('dlgCancel').addEventListener('click', closeDlg);
+document.getElementById('dlgOk').addEventListener('click', function(){
+  var ok = dlgOkHandler ? dlgOkHandler() : true;
+  if(ok!==false) closeDlg();
+});
+document.getElementById('mask').addEventListener('click', function(e){
+  if(e.target===this) closeDlg();
+});
+document.addEventListener('keydown', function(e){
+  if(e.key==='Escape') closeDlg();
+  if(e.key==='Enter' && state.view==='money'){
+    if(document.activeElement && document.activeElement.id==='mAmt') addMoney();
+  }
+});
+
+/* ================= 初始化 ================= */
+function boot(){
+  seedIfNeeded();
+  clearSeedProjectsOnce();
+  refreshAll();
+  document.getElementById('mDate').value=today();
+  var hd=document.querySelector('#view-ai .card-hd'); if(hd) hd.appendChild(newsRefresh);
+  var hd2=document.querySelector('#view-hot .card-hd'); if(hd2) hd2.appendChild(hotRefresh);
+  remindTimer=setInterval(checkRemind, 60000);
+  var n=state.ledger.length + state.topics.length + learnStats().blocks;
+  if(n>=30) setTimeout(function(){ toast('数据已积累 '+n+' 条，建议导出一次备份'); }, 1200);
+}
+if(document.readyState==='loading'){ document.addEventListener('DOMContentLoaded', boot); }
+else { boot(); }
+
+})();
+</script>
+
+<script>
+if("serviceWorker" in navigator){
+  window.addEventListener("load",function(){
+    navigator.serviceWorker.register("sw.js").catch(function(err){console.log("SW register failed:",err);});
+  });
+}
+</script>
+</body>
+</html>

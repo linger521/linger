@@ -32,19 +32,26 @@
 
 ### 方式二：当 App 装到手机（PWA 版）
 
-`solo-pwa/` 是同一套页面 + 安装清单 + 离线缓存，**安卓 Chrome 可以安装成桌面图标，全屏无地址栏、断网也能打开**。
+`docs/` 是同一套页面 + 安装清单 + 离线缓存，**安卓 Chrome 可以安装成桌面图标，全屏无地址栏、断网也能打开**。
+
+**在线地址（GitHub Pages，自带 HTTPS）**：
+
+```
+https://linger521.github.io/solo-workbench/
+```
+
+安卓 Chrome 打开这个地址 → 右上角菜单 → **「安装应用」** → 桌面出现独立图标。
+
+本地跑也可以：
 
 ```bash
-# 本地起个静态服务（PWA 的 Service Worker 必须走 http/https，不能直接双击 file://）
-cd solo-pwa
+# PWA 的 Service Worker 必须走 http/https，不能直接双击 file://
+cd docs
 python3 -m http.server 8000
 # 浏览器打开 http://localhost:8000
 ```
 
-手机上操作：用 **Chrome** 打开地址 → 右上角菜单 → **「安装应用」**（没有这项就点「添加到主屏幕」）。
-
 > 注意：在微信内置浏览器里打不开这功能，要先点右上角 `⋯` → 「在浏览器打开」。
-> 想获得公网链接，把 `solo-pwa/` 推到 GitHub Pages 即可（Pages 自带 HTTPS，PWA 能正常安装）。
 
 ### 环境要求
 
@@ -59,11 +66,12 @@ python3 -m http.server 8000
 ```
 .
 ├── solo-workbench.html      # 主程序，单文件、可独立使用
-├── solo-pwa/                # PWA 版本（可安装 / 离线）
+├── docs/                    # PWA 版本（可安装 / 离线），即 GitHub Pages 发布目录
 │   ├── index.html           #   主程序副本 + manifest 引用 + SW 注册
 │   ├── manifest.webmanifest #   安装清单：名称、图标、独立窗口
 │   ├── sw.js                #   Service Worker：离线缓存
-│   └── icon-192/256/512.png #   应用图标
+│   ├── icon-192/256/512.png #   应用图标
+│   └── .nojekyll            #   跳过 Jekyll 构建，原样发布静态文件
 ├── overview.md              # 设计说明与迭代记录
 └── README.md
 ```
@@ -324,7 +332,7 @@ python3 -m http.server 8000
 - **计算层**：`overdueList()` / `todayList()` / `learnStats()` 等纯函数
 - **渲染层**：`renderXxx()` 只读 state 写 DOM，彼此不调用
 
-改动 PWA 版本时，记得同步更新 `solo-pwa/sw.js` 里的 `CACHE` 版本号（如 `solo-workbench-v2`），否则用户端会一直用旧缓存。
+改动 PWA 版本时，记得同步更新 `docs/sw.js` 里的 `CACHE` 版本号（如 `solo-workbench-v2`），否则用户端会一直用旧缓存。
 
 ---
 
